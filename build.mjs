@@ -221,7 +221,14 @@ const indexData = {
   complete: { file: 'complete/map.svg', width: mapData.size.width, height: mapData.size.height },
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
-    summary: s.summary, cover: `stories/${s.id}/${s.cover}`
+    summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
+    // metadatos de los documentos: el panel de documentos los lista todos,
+    // sin cargar los datos de cada historia
+    documents: records.get(s.id).documents.map((d) => ({
+      id: d.id, order: d.order, label: d.label, places: d.places,
+      year: d.year, yearEnd: d.yearEnd, story: d.story,
+      storyTitle: d.storyTitle, sequence: d.sequence
+    }))
   }))
 };
 const miniIndex = indexData;
@@ -393,23 +400,12 @@ const exploreMain = `<main class="explore" data-explore>
       <span class="dp-count" data-dp-count></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
     </div>
-    <div class="dp-body">
+    <div class="dp-body" data-dp-body>
       <ol class="dp-list" data-dp-list></ol>
-      <p class="dp-none" data-dp-none>Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.</p>
     </div>
   </aside>
   <button class="panel-tab left" type="button" data-show-panel="stories" hidden>Historias</button>
   <button class="panel-tab right" type="button" data-show-panel="docs" hidden>Documentos</button>
-  <aside class="panel" data-panel hidden>
-    <div class="panel-head">
-      <h2 data-panel-title></h2>
-      <div class="panel-head-actions">
-        <button class="btn small ghost" type="button" data-clear>Limpiar</button>
-        <button class="icon-btn small" type="button" data-panel-close aria-label="Cerrar">✕</button>
-      </div>
-    </div>
-    <div class="panel-body" data-panel-body></div>
-  </aside>
 </main>`;
 
 // ---------------------------------------------------------------------------

@@ -18,7 +18,7 @@ historias.
 | Ruta | Propósito |
 |---|---|
 | `/` | Portada: qué es el sitio, cómo funciona, y el botón **Entrar** |
-| `/explorar` | La aplicación: mapa de fondo, línea de tiempo abajo, panel de historias a un lado y el lector de historias superpuesto |
+| `/explorar` | La aplicación: mapa de fondo, línea de tiempo abajo, panel de historias a la izquierda, panel de documentos a la derecha y el lector de historias superpuesto |
 | `/explorar?place=…&from=…&to=…&doc=…` | La misma vista con una selección fija (enlace compartible) |
 | `/historias/<id>` | Página estática de la historia (para enlaces compartidos): intro, PDF, documentos, botón **Marcar como leída** |
 
@@ -26,6 +26,12 @@ historias.
 y la abierta); el resto aparece al marcar la anterior como leída. El lector de
 historias se abre sobre el mapa: cuerpo en markdown, documentos enlazados con
 el mapa y la línea de tiempo, y el botón **Marcar como leída** al pie.
+
+El panel de documentos (derecha) lista **todos los documentos publicados** en
+orden cronológico, sin filtrar: al pasar el cursor por un lugar del mapa o un
+punto de la línea de tiempo, las entradas correspondientes se resaltan y se
+centran en el panel. Los documentos de historias aún bloqueadas aparecen
+atenuados y sin acción.
 
 Las páginas de historia son HTML estático puro (indexables, RSS, sin scripts).
 Solo el progreso y `/explorar` necesitan JavaScript.

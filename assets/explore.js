@@ -16,6 +16,7 @@
     pieces: [],
     places: new Map(),
     docs: [],
+    allDocs: [],
     eras: [],
     complete: false,
     sel: { place: null, doc: null },
@@ -24,7 +25,6 @@
     readerDoc: null,
     readerStory: null,
     readerRecs: {},
-    lockedNotice: false,
     panels: { stories: true, docs: true }
   };
 
@@ -60,6 +60,19 @@
       for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
     }
     return null;
+  }
+
+  function docMeta(id) {
+    for (var i = 0; i < state.allDocs.length; i++) if (state.allDocs[i].id === id) return state.allDocs[i];
+    return null;
+  }
+
+  function buildAllDocs(index) {
+    state.allDocs = [];
+    index.stories.forEach(function (s) {
+      (s.documents || []).forEach(function (d) { state.allDocs.push(d); });
+    });
+    state.allDocs.sort(function (a, b) { return a.year - b.year || a.sequence - b.sequence; });
   }
 
   function visibleDocs() {
@@ -217,9 +230,9 @@
       }
       placeEls.set(place.id, g);
 
-      g.addEventListener('mouseenter', function () { setPreview({ type: 'place', id: place.id }); });
+      g.addEventListener('mouseenter', function () { setPreview({ type: 'place', id: place.id }, true); });
       g.addEventListener('mouseleave', function () { setPreview(null); });
-      g.addEventListener('focus', function () { setPreview({ type: 'place', id: place.id }); });
+      g.addEventListener('focus', function () { setPreview({ type: 'place', id: place.id }, true); });
       g.addEventListener('blur', function () { setPreview(null); });
       g.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -296,7 +309,6 @@
         state.sel.place = null;
         syncUrl();
         updateHighlights();
-        renderPanel();
       }
     });
 
@@ -407,6 +419,12 @@
           var idx = parseInt(this.getAttribute('data-cluster'), 10);
           zoomToCluster(idx);
         });
+        g2.addEventListener('mouseenter', function () {
+          var idx = parseInt(this.getAttribute('data-cluster'), 10);
+          var cl = clusters[idx];
+          if (cl) setPreview({ type: 'docs', ids: cl.docs.map(function (d) { return d.id; }) }, true);
+        });
+        g2.addEventListener('mouseleave', function () { setPreview(null); });
         g2.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' || e.key === ' ') {
             var idx = parseInt(this.getAttribute('data-cluster'), 10);
@@ -442,17 +460,17 @@
     }, g);
     docEls.set(d.id, g);
 
-    g.addEventListener('mouseenter', function () { setPreview({ type: 'docs', ids: [d.id] }); });
+    g.addEventListener('mouseenter', function () { setPreview({ type: 'docs', ids: [d.id] }, true); });
     g.addEventListener('mouseleave', function () { setPreview(null); });
-    g.addEventListener('focus', function () { setPreview({ type: 'docs', ids: [d.id] }); });
+    g.addEventListener('focus', function () { setPreview({ type: 'docs', ids: [d.id] }, true); });
     g.addEventListener('blur', function () { setPreview(null); });
     g.addEventListener('click', function (e) {
       e.stopPropagation();
       if (tlSuppressClick) return;
-      pinDoc(d.id);
+      openReader(d.id);
     });
     g.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pinDoc(d.id); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openReader(d.id); }
     });
   }
 
@@ -533,7 +551,6 @@
         state.range = { from: from, to: to };
         syncUrl();
         renderTimeline();
-        renderPanel();
         updateHighlights();
         updateRangeChip();
       }
@@ -564,7 +581,7 @@
     btn.textContent = '×';
     btn.addEventListener('click', function () {
       state.range = null;
-      syncUrl(); renderTimeline(); renderPanel(); updateHighlights(); updateRangeChip();
+      syncUrl(); renderTimeline(); updateHighlights(); updateRangeChip();
     });
     chip.appendChild(span);
     chip.appendChild(btn);
@@ -591,7 +608,11 @@
     return { placeIds: placeIds, docIds: docIds };
   }
 
-  function updateHighlights() { updateMapHighlight(); updateTimelineHighlight(); }
+  function updateHighlights(scroll) {
+    updateMapHighlight();
+    updateTimelineHighlight();
+    updateDocsPanelHighlight(scroll);
+  }
 
   function updateMapHighlight() {
     var h = currentHighlight();
@@ -618,84 +639,28 @@
     });
   }
 
-  // -- panel ------------------------------------------------------------------------
-
-  function docItemHTML(d) {
-    var color = S.storyColor(d.sequence);
-    var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-    return '<li><button type="button" class="doc-item" data-open-doc="' + S.esc(d.id) + '">' +
-      '<img src="' + S.u(d.image) + '" alt="' + S.esc(d.alt) + '" loading="lazy">' +
-      '<span class="doc-item-info"><span class="doc-item-label">' + S.esc(d.label) + '</span>' +
-      '<span class="doc-item-year">' + S.esc(span) + '</span></span>' +
-      '<span class="doc-item-story"><span class="color-chip" style="background:' + color + '"></span>' + S.esc(d.storyTitle) + '</span>' +
-      '</button></li>';
+  function updateDocsPanelHighlight(scroll) {
+    if (!dom.dpList) return;
+    var h = currentHighlight();
+    var inRange = new Set(visibleDocs().map(function (d) { return d.id; }));
+    var first = null;
+    dom.dpList.querySelectorAll('.dp-entry').forEach(function (li) {
+      var id = li.getAttribute('data-dp-doc');
+      var lit = h.docIds.has(id);
+      li.classList.toggle('lit', lit);
+      li.classList.toggle('active', state.sel.doc === id);
+      li.classList.toggle('dimmed', !!state.range && !inRange.has(id));
+      if (lit && !first) first = li;
+    });
+    if (scroll && first) centerDpEntry(first);
   }
 
-  function listHTML(docs, title, subtitle) {
-    return '<div class="panel-section"><h3>' + S.esc(title) + '</h3>' +
-      (subtitle ? '<p class="panel-subtitle">' + S.esc(subtitle) + '</p>' : '') +
-      '<ul class="doc-list-panel">' + docs.map(docItemHTML).join('') + '</ul></div>';
-  }
-
-  function docCardHTML(d, pinned) {
-    var color = S.storyColor(d.sequence);
-    var places = d.places.map(function (pid) { var p = state.places.get(pid); return p ? p.name : pid; }).join(', ');
-    var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-    return '<div class="panel-section doc-card">' +
-      '<img class="doc-card-img" src="' + S.u(d.image) + '" alt="' + S.esc(d.alt) + '">' +
-      '<div class="doc-card-info">' +
-      '<h3>' + S.esc(d.label) + '</h3>' +
-      '<p>' + S.esc(places) + ' · ' + S.esc(span) + '</p>' +
-      '<p class="doc-card-story"><span class="color-chip" style="background:' + color + '"></span>' + S.esc(d.storyTitle) + '</p>' +
-      (pinned ? '<button type="button" class="btn" data-open-doc="' + S.esc(d.id) + '">Abrir documento</button>' : '') +
-      '</div></div>';
-  }
-
-  function renderPanel() {
-    var body = dom.panelBody;
-    var title = dom.panelTitle;
-    var clear = dom.clearBtn;
-    var hasSel = state.sel.place || state.sel.doc || state.range;
-
-    clear.hidden = !hasSel;
-    clear.textContent = 'Limpiar';
-
-    if (state.lockedNotice) {
-      title.textContent = 'Todavía no';
-      body.innerHTML = '<div class="panel-notice"><p>Esto pertenece a una historia que aún no has leído.</p>' +
-        '<p>Lee las historias en orden para revelarlo.</p></div>';
-    } else if (state.sel.doc) {
-      var dd = findDoc(state.sel.doc);
-      if (dd) {
-        title.textContent = dd.label;
-        body.innerHTML = docCardHTML(dd, true);
-      }
-    } else if (state.preview && state.preview.type === 'docs') {
-      var d = findDoc(state.preview.ids[0]);
-      if (d) {
-        title.textContent = d.label;
-        body.innerHTML = docCardHTML(d, false);
-      }
-    } else if (state.sel.place) {
-      var pl = state.places.get(state.sel.place);
-      var ds = docsAtPlace(state.sel.place);
-      title.textContent = pl ? pl.name : 'Lugar';
-      var subtitle = ds.length + (ds.length === 1 ? ' documento' : ' documentos');
-      if (state.range) subtitle += ' · ' + S.fmtSpan(state.range.from, state.range.to);
-      body.innerHTML = listHTML(ds, pl ? pl.name : 'Lugar', subtitle);
-    } else if (state.preview && state.preview.type === 'place') {
-      var place = state.places.get(state.preview.id);
-      var docs = docsAtPlace(state.preview.id);
-      title.textContent = place ? place.name : '';
-      body.innerHTML = listHTML(docs, place ? place.name : 'Lugar', docs.length + (docs.length === 1 ? ' documento' : ' documentos'));
-    } else if (state.range) {
-      var inRange = visibleDocs();
-      title.textContent = 'Periodo';
-      body.innerHTML = listHTML(inRange, S.fmtSpan(state.range.from, state.range.to), inRange.length + (inRange.length === 1 ? ' documento' : ' documentos'));
-    }
-
-    var show = state.lockedNotice || hasSel || state.preview;
-    dom.panel.hidden = !show;
+  function centerDpEntry(li) {
+    var body = dom.dpBody;
+    if (!body) return;
+    var br = body.getBoundingClientRect();
+    var r = li.getBoundingClientRect();
+    body.scrollTop += (r.top - br.top) - (body.clientHeight - r.height) / 2;
   }
 
   // -- lector --------------------------------------------------------------------------
@@ -738,18 +703,33 @@
 
   function openReader(docId) {
     var d = findDocAnywhere(docId);
-    if (!d) return;
+    if (!d) {
+      // documento de una historia abierta cuyos datos aún no se han cargado
+      var meta = docMeta(docId);
+      if (!meta) return;
+      if (S.storyStates()[meta.story] === 'locked') {
+        S.toast('Esto pertenece a una historia que aún no has leído.');
+        return;
+      }
+      S.fetchStoryData(meta.story).then(function (rec) {
+        state.readerRecs = state.readerRecs || {};
+        state.readerRecs[meta.story] = rec;
+        openReader(docId);
+      }).catch(function (err) {
+        S.toast('No se pudo abrir el documento: ' + err.message);
+      });
+      return;
+    }
     var revealed = !!findDoc(docId);
     state.readerDoc = docId;
     if (revealed) {
       state.sel.doc = docId;
       state.sel.place = null;
       syncUrl();
-      updateHighlights();
+      updateHighlights(true);
     }
     if (!dom.reader) buildReader();
     updateReader();
-    if (revealed) { renderPanel(); renderDocsPanel(); }
     dom.reader.hidden = false;
     document.body.classList.add('reader-open');
   }
@@ -776,8 +756,8 @@
       state.readerDoc = next.id;
       if (findDoc(next.id)) {
         state.sel.doc = next.id;
-        renderPanel();
         syncUrl();
+        updateHighlights(true);
       }
       updateReader();
     }
@@ -786,44 +766,35 @@
   function closeReader() {
     if (dom.reader) dom.reader.hidden = true;
     document.body.classList.remove('reader-open');
+    if (state.sel.doc) {
+      state.sel.doc = null;
+      syncUrl();
+      updateHighlights();
+    }
   }
 
   // -- selección -------------------------------------------------------------------------
 
-  function setPreview(p) {
+  function setPreview(p, scroll) {
     state.preview = p;
-    updateHighlights();
-    renderPanel();
+    updateHighlights(scroll);
   }
 
   function togglePlacePin(id) {
     if (state.sel.place === id) state.sel.place = null;
     else { state.sel.place = id; state.sel.doc = null; }
     syncUrl();
-    updateHighlights();
-    renderPanel();
-  }
-
-  function pinDoc(id) {
-    state.sel.doc = id;
-    state.sel.place = null;
-    syncUrl();
-    updateHighlights();
-    renderPanel();
-    renderDocsPanel();
+    updateHighlights(true);
   }
 
   function clearSelection() {
     state.sel.place = null;
     state.sel.doc = null;
     state.range = null;
-    state.lockedNotice = false;
     closeReader();
     syncUrl();
     renderTimeline();
     updateHighlights();
-    renderPanel();
-    renderDocsPanel();
     updateRangeChip();
   }
 
@@ -848,16 +819,12 @@
       state.range = { from: Math.min(from, to), to: Math.max(from, to) };
     }
     if (docId != null) {
-      if (findDoc(docId)) {
-        state.sel.doc = docId;
-        openReader(docId);
-      } else {
-        state.lockedNotice = true;
-      }
+      if (docMeta(docId)) openReader(docId);
+      else S.toast('Ese documento no existe o ya no está publicado.');
     }
     if (placeId != null) {
       if (state.places.has(placeId)) state.sel.place = placeId;
-      else state.lockedNotice = true;
+      else S.toast('Esto pertenece a una historia que aún no has leído.');
     }
     updateRangeChip();
   }
@@ -906,24 +873,27 @@
 
   function renderDocsPanel() {
     if (!dom.dpList) return;
+    var states = S.storyStates();
     var html = '';
-    state.docs.forEach(function (d) {
+    state.allDocs.forEach(function (d) {
       var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-      html += '<li class="dp-entry' + (state.sel.doc === d.id ? ' active' : '') + '">' +
-        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
+      var locked = states[d.story] === 'locked';
+      html += '<li class="dp-entry' + (locked ? ' locked' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
+        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '"' + (locked ? ' disabled' : '') + '>' +
         '<span class="dp-year">' + S.esc(span) + '</span>' +
         '<span class="dp-label">' + S.esc(d.label) + '</span>' +
         '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' +
         '</button></li>';
     });
     dom.dpList.innerHTML = html;
-    dom.dpNone.hidden = state.docs.length > 0;
-    dom.dpCount.textContent = state.docs.length ? state.docs.length + (state.docs.length === 1 ? ' documento' : ' documentos') : '';
+    var n = state.allDocs.length;
+    dom.dpCount.textContent = n ? n + (n === 1 ? ' documento' : ' documentos') : '';
     dom.dpList.querySelectorAll('[data-doc-ref]').forEach(function (b) {
       var docId = b.getAttribute('data-doc-ref');
-      b.addEventListener('mouseenter', function () { setPreview({ type: 'docs', ids: [docId] }); });
+      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
       b.addEventListener('mouseleave', function () { setPreview(null); });
     });
+    updateDocsPanelHighlight();
   }
 
   // -- visibilidad de los paneles ----------------------------------------------------------
@@ -1117,17 +1087,12 @@
     dom.tlSvg = document.querySelector('[data-tl-svg]');
     dom.tlEmpty = document.querySelector('[data-tl-empty]');
     dom.rangeChip = document.querySelector('[data-range-chip]');
-    dom.panel = document.querySelector('[data-panel]');
-    dom.panelBody = document.querySelector('[data-panel-body]');
-    dom.panelTitle = document.querySelector('[data-panel-title]');
-    dom.clearBtn = document.querySelector('[data-clear]');
-    dom.panelClose = document.querySelector('[data-panel-close]');
     dom.spList = document.querySelector('[data-sp-list]');
     dom.spCount = document.querySelector('[data-sp-count]');
     dom.exploreEl = document.querySelector('[data-explore]');
     dom.dpList = document.querySelector('[data-dp-list]');
+    dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
-    dom.dpNone = document.querySelector('[data-dp-none]');
     dom.panelTabs = Array.prototype.slice.call(document.querySelectorAll('[data-show-panel]'));
   }
 
@@ -1135,9 +1100,6 @@
     collectDom();
     loadPanels();
     applyPanels();
-
-    dom.clearBtn.addEventListener('click', clearSelection);
-    dom.panelClose.addEventListener('click', clearSelection);
 
     document.addEventListener('click', function (e) {
       var storyBtn = e.target.closest('[data-open-story]');
@@ -1168,6 +1130,7 @@
 
     S.fetchIndexData().then(function (index) {
       state.index = index;
+      buildAllDocs(index);
       return S.loadUnlockedData().then(function (files) {
         state.files = files;
         rebuildState();
@@ -1179,7 +1142,6 @@
         fitMap();
         applyUrl();
         updateHighlights();
-        renderPanel();
         renderStoriesPanel();
         renderDocsPanel();
         updateHints();
