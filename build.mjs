@@ -320,7 +320,7 @@ function storyMain(s, rec) {
   const docs = rec.documents.map((d) => `
       <li class="doc" data-doc="${d.order}" data-doc-id="${d.id}">
         <figure>
-          <img src="${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
+          <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
           <figcaption>
             <span class="doc-label">${escapeHtml(d.label)}</span>
             <span class="doc-meta" data-doc-meta hidden></span>
@@ -352,11 +352,11 @@ function storyMain(s, rec) {
       <p class="volume">${escapeHtml(s.volume)}</p>
       <h1>${escapeHtml(s.title)}</h1>
       <div class="story-head-grid">
-        <img class="cover" src="stories/${s.id}/${s.cover}" alt="Portada de ${escapeHtml(s.title)}">
+        <img class="cover" src="../../stories/${s.id}/${s.cover}" alt="Portada de ${escapeHtml(s.title)}">
         <div class="story-head-info">
           <p class="summary">${escapeHtml(s.summary)}</p>
           <div class="entry-actions">
-            <a class="btn" href="stories/${s.id}/${s.pdf}" download>Descargar PDF</a>
+            <a class="btn" href="../../stories/${s.id}/${s.pdf}" download>Descargar PDF</a>
             <button class="btn primary" type="button" data-mark-read data-id="${s.id}">Marcar como leída</button>
           </div>
         </div>
