@@ -237,12 +237,6 @@
         S.toast('Historia marcada como leída.');
       });
       applyReadState();
-      var counter = document.querySelector('[data-counter]');
-      if (counter) {
-        var total = window.SEMI_INDEX.stories.length;
-        var n = S.readCount();
-        counter.textContent = n + ' de ' + total + ' historias leíd' + (n === 1 ? 'a' : 'as');
-      }
     });
   });
 })();

@@ -12,6 +12,7 @@
 
   var state = {
     index: null,
+    files: [],
     pieces: [],
     places: new Map(),
     docs: [],
@@ -21,6 +22,7 @@
     range: null,
     preview: null,
     readerDoc: null,
+    readerStory: null,
     lockedNotice: false
   };
 
@@ -44,6 +46,17 @@
 
   function findDoc(id) {
     for (var i = 0; i < state.docs.length; i++) if (state.docs[i].id === id) return state.docs[i];
+    return null;
+  }
+
+  function findDocAnywhere(id) {
+    var d = findDoc(id);
+    if (d) return d;
+    var recs = state.readerRecs || {};
+    for (var k in recs) {
+      var list = recs[k].documents || [];
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    }
     return null;
   }
 
@@ -299,6 +312,7 @@
   // -- línea de tiempo -------------------------------------------------------------
 
   function initDomain() {
+    if (!state.docs.length) { DOMAIN.d0 = -20; DOMAIN.d1 = 20; return; }
     var years = [];
     state.docs.forEach(function (d) { years.push(d.year, d.yearEnd != null ? d.yearEnd : d.year); });
     var min = Math.min.apply(null, years);
@@ -647,65 +661,39 @@
     if (state.lockedNotice) {
       title.textContent = 'Todavía no';
       body.innerHTML = '<div class="panel-notice"><p>Esto pertenece a una historia que aún no has leído.</p>' +
-        '<p>Marca como leídas las historias del <a href="' + S.u('') + '">catálogo</a> para revelarlo.</p></div>';
-      return;
-    }
-
-    var p = state.preview;
-
-    if (p && p.type === 'docs' && !state.sel.doc) {
-      var d = findDoc(p.ids[0]);
-      if (d) {
-        title.textContent = d.label;
-        body.innerHTML = docCardHTML(d, false);
-        return;
-      }
-    }
-
-    if (state.sel.doc) {
+        '<p>Lee las historias en orden para revelarlo.</p></div>';
+    } else if (state.sel.doc) {
       var dd = findDoc(state.sel.doc);
       if (dd) {
         title.textContent = dd.label;
         body.innerHTML = docCardHTML(dd, true);
-        return;
       }
-    }
-
-    if (p && p.type === 'place' && !state.sel.place) {
-      var place = state.places.get(p.id);
-      var docs = docsAtPlace(p.id);
-      title.textContent = place ? place.name : '';
-      body.innerHTML = listHTML(docs, place ? place.name : 'Lugar', docs.length + (docs.length === 1 ? ' documento' : ' documentos'));
-      return;
-    }
-
-    if (state.sel.place) {
+    } else if (state.preview && state.preview.type === 'docs') {
+      var d = findDoc(state.preview.ids[0]);
+      if (d) {
+        title.textContent = d.label;
+        body.innerHTML = docCardHTML(d, false);
+      }
+    } else if (state.sel.place) {
       var pl = state.places.get(state.sel.place);
       var ds = docsAtPlace(state.sel.place);
       title.textContent = pl ? pl.name : 'Lugar';
       var subtitle = ds.length + (ds.length === 1 ? ' documento' : ' documentos');
       if (state.range) subtitle += ' · ' + S.fmtSpan(state.range.from, state.range.to);
       body.innerHTML = listHTML(ds, pl ? pl.name : 'Lugar', subtitle);
-      return;
-    }
-
-    if (state.range) {
+    } else if (state.preview && state.preview.type === 'place') {
+      var place = state.places.get(state.preview.id);
+      var docs = docsAtPlace(state.preview.id);
+      title.textContent = place ? place.name : '';
+      body.innerHTML = listHTML(docs, place ? place.name : 'Lugar', docs.length + (docs.length === 1 ? ' documento' : ' documentos'));
+    } else if (state.range) {
       var inRange = visibleDocs();
       title.textContent = 'Periodo';
       body.innerHTML = listHTML(inRange, S.fmtSpan(state.range.from, state.range.to), inRange.length + (inRange.length === 1 ? ' documento' : ' documentos'));
-      return;
     }
 
-    title.textContent = 'Resultados';
-    var nPlaces = 0;
-    placeEls.forEach(function () { nPlaces++; });
-    body.innerHTML =
-      '<div class="panel-default">' +
-      '<p>' + S.plural(state.docs.length, 'documento', 'documentos') + ' en ' +
-      S.plural(nPlaces, 'lugar', 'lugares') + ' · ' +
-      S.plural(state.files.length, 'historia leída', 'historias leídas') + '</p>' +
-      '<p class="panel-hint">Pasa el cursor o toca un lugar del mapa o un punto de la línea de tiempo para ver sus documentos. Arrastra sobre la línea de tiempo para acotar un periodo.</p>' +
-      '</div>';
+    var show = state.lockedNotice || hasSel || state.preview;
+    dom.panel.hidden = !show;
   }
 
   // -- lector --------------------------------------------------------------------------
@@ -739,22 +727,33 @@
   }
 
   function storyDocsOf(doc) {
-    return state.docs.filter(function (d) { return d.story === doc.story; })
-      .sort(function (a, b) { return a.order - b.order; });
+    var list = state.docs.filter(function (d) { return d.story === doc.story; });
+    if (!list.length && state.readerRecs && state.readerRecs[doc.story]) {
+      list = (state.readerRecs[doc.story].documents || []).slice();
+    }
+    return list.sort(function (a, b) { return a.order - b.order; });
   }
 
   function openReader(docId) {
-    var d = findDoc(docId);
+    var d = findDocAnywhere(docId);
     if (!d) return;
+    var revealed = !!findDoc(docId);
     state.readerDoc = docId;
+    if (revealed) {
+      state.sel.doc = docId;
+      state.sel.place = null;
+      syncUrl();
+      updateHighlights();
+    }
     if (!dom.reader) buildReader();
     updateReader();
+    if (revealed) renderPanel();
     dom.reader.hidden = false;
     document.body.classList.add('reader-open');
   }
 
   function updateReader() {
-    var d = findDoc(state.readerDoc);
+    var d = findDocAnywhere(state.readerDoc);
     if (!d) return;
     var list = storyDocsOf(d);
     var i = list.findIndex(function (x) { return x.id === d.id; });
@@ -766,17 +765,19 @@
   }
 
   function readerStep(delta) {
-    var d = findDoc(state.readerDoc);
+    var d = findDocAnywhere(state.readerDoc);
     if (!d) return;
     var list = storyDocsOf(d);
     var i = list.findIndex(function (x) { return x.id === d.id; });
     var next = list[i + delta];
     if (next) {
       state.readerDoc = next.id;
-      state.sel.doc = next.id;
+      if (findDoc(next.id)) {
+        state.sel.doc = next.id;
+        renderPanel();
+        syncUrl();
+      }
       updateReader();
-      renderPanel();
-      syncUrl();
     }
   }
 
@@ -860,48 +861,254 @@
   // -- arranque ------------------------------------------------------------------------------
 
   function collectDom() {
-    dom.empty = document.querySelector('[data-empty]');
-    dom.layout = document.querySelector('[data-explore-layout]');
     dom.viewport = document.querySelector('[data-map-viewport]');
     dom.world = document.querySelector('[data-map-world]');
+    dom.mapHint = document.querySelector('[data-map-hint]');
     dom.tlSvg = document.querySelector('[data-tl-svg]');
+    dom.tlEmpty = document.querySelector('[data-tl-empty]');
     dom.rangeChip = document.querySelector('[data-range-chip]');
+    dom.panel = document.querySelector('[data-panel]');
     dom.panelBody = document.querySelector('[data-panel-body]');
     dom.panelTitle = document.querySelector('[data-panel-title]');
     dom.clearBtn = document.querySelector('[data-clear]');
+    dom.panelClose = document.querySelector('[data-panel-close]');
+    dom.spList = document.querySelector('[data-sp-list]');
+    dom.spCount = document.querySelector('[data-sp-count]');
   }
 
-  function showEmpty() {
-    dom.layout.hidden = true;
-    dom.empty.hidden = false;
-    var link = dom.empty.querySelector('[data-open-link]');
-    var openId = S.openStoryId();
-    var story = (window.SEMI_INDEX.stories || []).filter(function (s) { return s.id === openId; })[0];
-    if (link) {
-      if (story) {
-        link.href = S.u('historias/' + story.id + '/');
-        link.textContent = 'Leer ahora: ' + story.title;
-      } else {
-        link.href = S.u('');
-        link.textContent = 'Ir al catálogo';
-      }
+  // -- panel de historias ---------------------------------------------------------------
+
+  function storyMeta(id) {
+    return S.bySeq().filter(function (s) { return s.id === id; })[0] || null;
+  }
+
+  function nextStoryOf(id) {
+    var list = S.bySeq();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i + 1] || null;
     }
+    return null;
+  }
+
+  function renderStoriesPanel() {
+    var states = S.storyStates();
+    var read = S.getRead();
+    var html = '';
+    S.bySeq().forEach(function (s) {
+      var st = states[s.id];
+      if (st === 'locked') return; // solo lo desbloqueado: el resto espera su turno
+      if (st === 'open') {
+        html += '<li class="sp-entry open" data-id="' + S.esc(s.id) + '">' +
+          '<div class="sp-entry-head"><span class="sp-seq">' + s.sequence + '</span>' +
+          '<h3 class="sp-title">' + S.esc(s.title) + '</h3></div>' +
+          '<p class="sp-volume">' + S.esc(s.volume) + '</p>' +
+          '<p class="sp-summary">' + S.esc(s.summary) + '</p>' +
+          '<div class="sp-actions">' +
+          '<button type="button" class="btn primary" data-open-story="' + S.esc(s.id) + '">Leer ahora</button>' +
+          '<button type="button" class="btn ghost" data-mark-read data-id="' + S.esc(s.id) + '">Marcar como leída</button>' +
+          '</div></li>';
+      } else {
+        html += '<li class="sp-entry read" data-id="' + S.esc(s.id) + '">' +
+          '<div class="sp-entry-head"><span class="sp-seq">' + s.sequence + '</span>' +
+          '<h3 class="sp-title">' + S.esc(s.title) + '</h3>' +
+          '<span class="sp-check" title="Leída">✓</span></div>' +
+          '<p class="sp-volume">' + S.esc(s.volume) + '</p>' +
+          '<div class="sp-actions">' +
+          '<button type="button" class="btn small ghost" data-open-story="' + S.esc(s.id) + '">Volver a leer</button>' +
+          '</div></li>';
+      }
+    });
+    if (!html) html = '<li class="sp-none">No hay historias disponibles todavía.</li>';
+    dom.spList.innerHTML = html;
+    var n = Object.keys(read).filter(function (id) { return storyMeta(id); }).length;
+    dom.spCount.textContent = n + ' / ' + S.bySeq().length;
+  }
+
+  // -- lector de historia ----------------------------------------------------------------
+
+  function revealMessage(rec) {
+    return S.plural(rec.pieces.length, 'pieza nueva del mapa', 'piezas nuevas del mapa') + ' · ' +
+      S.plural(rec.places.length, 'lugar', 'lugares') + ' · ' +
+      S.plural(rec.documents.length, 'documento', 'documentos');
+  }
+
+  function docMetaText(d, names) {
+    var places = d.places.map(function (pid) { return names[pid] || pid; }).join(', ');
+    var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
+    return places + ' · ' + span;
+  }
+
+  function storyReaderHTML(rec, isRead) {
+    var names = {};
+    rec.places.forEach(function (p) { names[p.id] = p.name; });
+    var docs = rec.documents.map(function (d) {
+      return '<li><button type="button" class="doc-ref" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '">' +
+        '<img src="' + S.u(d.image) + '" alt="' + S.esc(d.alt) + '" loading="lazy">' +
+        '<span class="doc-ref-info"><span class="doc-ref-label">' + S.esc(d.label) + '</span>' +
+        (isRead ? '<span class="doc-ref-meta">' + S.esc(docMetaText(d, names)) + '</span>' : '') +
+        '</span></button></li>';
+    }).join('');
+
+    var foot;
+    var next = nextStoryOf(rec.id);
+    if (!isRead) {
+      foot = '<button type="button" class="btn primary" data-mark-read data-id="' + S.esc(rec.id) + '">Marcar como leída</button>';
+    } else {
+      foot = '<p class="sp-revealed">Has revelado: ' + S.esc(revealMessage(rec)) + '.</p>' +
+        (next ? '<button type="button" class="btn primary" data-open-story="' + S.esc(next.id) + '">Siguiente: ' + S.esc(next.title) + '</button>' : '<p class="sp-revealed">Has llegado al final de lo publicado hasta hoy.</p>');
+    }
+
+    return '<div class="reader-backdrop" data-story-close></div>' +
+      '<article class="story-sheet" data-story-sheet>' +
+      '<button type="button" class="icon-btn story-close" data-story-close aria-label="Cerrar">✕</button>' +
+      '<header class="story-sheet-head">' +
+      '<p class="volume">' + S.esc(rec.volume) + '</p>' +
+      '<h2>' + S.esc(rec.title) + '</h2>' +
+      '<div class="story-sheet-grid">' +
+      '<img class="cover" src="' + S.u(rec.cover) + '" alt="Portada de ' + S.esc(rec.title) + '">' +
+      '<div><p class="summary">' + S.esc(rec.summary) + '</p>' +
+      '<p class="sheet-links"><a class="btn small" href="' + S.u(rec.pdf) + '" download>Descargar PDF</a>' +
+      ' <a class="btn small ghost" href="' + S.u('historias/' + rec.id + '/') + '">Página de la historia</a></p></div>' +
+      '</div>' +
+      '</header>' +
+      '<div class="story-sheet-body markdown">' + rec.bodyHtml + '</div>' +
+      '<section class="story-sheet-docs">' +
+      '<h3>Documentos</h3>' +
+      '<p class="docs-hint">' + (isRead ? 'Cada documento enlaza su lugar y su fecha en el mapa y la línea de tiempo.' : 'Los lugares y fechas de los documentos se revelan al marcar la historia como leída.') + '</p>' +
+      '<ol class="sheet-doc-list">' + docs + '</ol>' +
+      '</section>' +
+      '<footer class="story-sheet-foot">' + foot + '</footer>' +
+      '</article>';
+  }
+
+  function fillStoryReader(rec) {
+    var isRead = !!S.getRead()[rec.id];
+    dom.storyReader.innerHTML = storyReaderHTML(rec, isRead);
+    dom.storyReader.scrollTop = 0;
+    var sheet = dom.storyReader.querySelector('[data-story-sheet]');
+    if (sheet) sheet.scrollTop = 0;
+    dom.storyReader.querySelectorAll('[data-doc-ref]').forEach(function (b) {
+      var docId = b.getAttribute('data-doc-ref');
+      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
+      b.addEventListener('mouseleave', function () { setPreview(null); });
+    });
+  }
+
+  function openStoryReader(id) {
+    S.fetchStoryData(id).then(function (rec) {
+      state.readerStory = id;
+      state.readerRecs = state.readerRecs || {};
+      state.readerRecs[id] = rec;
+      if (!dom.storyReader) {
+        dom.storyReader = document.createElement('div');
+        dom.storyReader.className = 'story-reader';
+        dom.storyReader.hidden = true;
+        document.body.appendChild(dom.storyReader);
+      }
+      fillStoryReader(rec);
+      dom.storyReader.hidden = false;
+      document.body.classList.add('story-open');
+    }).catch(function (err) {
+      S.toast('No se pudo cargar la historia: ' + err.message);
+    });
+  }
+
+  function closeStoryReader() {
+    if (!dom.storyReader) return;
+    dom.storyReader.hidden = true;
+    document.body.classList.remove('story-open');
+    state.readerStory = null;
+  }
+
+  // -- marcar como leída --------------------------------------------------------------
+
+  function rebuildState() {
+    state.pieces = [];
+    state.places = new Map();
+    state.docs = [];
+    state.eras = [];
+    prepareData(state.files);
+  }
+
+  function addRecordToState(rec) {
+    if (state.files.some(function (f) { return f.id === rec.id; })) return;
+    state.files.push(rec);
+    rebuildState();
+  }
+
+  function refreshWorld() {
+    buildMap();
+    initDomain();
+    renderTimeline();
+    fitMap();
+    updateHighlights();
+    updateHints();
+    S.setSeenPieces(state.pieces.map(function (p) { return p.id; }));
+  }
+
+  function handleMarkRead(id) {
+    var states = S.storyStates();
+    if (states[id] === 'read') { S.toast('Ya habías marcado esta historia como leída.'); return; }
+    S.markRead(id);
+    S.fetchStoryData(id).then(function (rec) {
+      addRecordToState(rec);
+      refreshWorld();
+      renderStoriesPanel();
+      if (state.readerStory === id) fillStoryReader(rec);
+      S.toast('Historia marcada como leída: ' + revealMessage(rec) + '.');
+    }).catch(function () {
+      renderStoriesPanel();
+      S.toast('Historia marcada como leída.');
+    });
+  }
+
+  // -- avisos de estado vacío -----------------------------------------------------------
+
+  function updateHints() {
+    dom.mapHint.hidden = state.pieces.length > 0;
+    dom.tlEmpty.hidden = state.docs.length > 0;
+    dom.tlSvg.style.display = state.docs.length ? '' : 'none';
+  }
+
+  // -- arranque ------------------------------------------------------------------------------
+
+  function collectDom() {
+    dom.viewport = document.querySelector('[data-map-viewport]');
+    dom.world = document.querySelector('[data-map-world]');
+    dom.mapHint = document.querySelector('[data-map-hint]');
+    dom.tlSvg = document.querySelector('[data-tl-svg]');
+    dom.tlEmpty = document.querySelector('[data-tl-empty]');
+    dom.rangeChip = document.querySelector('[data-range-chip]');
+    dom.panel = document.querySelector('[data-panel]');
+    dom.panelBody = document.querySelector('[data-panel-body]');
+    dom.panelTitle = document.querySelector('[data-panel-title]');
+    dom.clearBtn = document.querySelector('[data-clear]');
+    dom.panelClose = document.querySelector('[data-panel-close]');
+    dom.spList = document.querySelector('[data-sp-list]');
+    dom.spCount = document.querySelector('[data-sp-count]');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     collectDom();
 
     dom.clearBtn.addEventListener('click', clearSelection);
+    dom.panelClose.addEventListener('click', clearSelection);
 
     document.addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-open-doc]');
-      if (!btn) return;
-      openReader(btn.getAttribute('data-open-doc'));
+      var storyBtn = e.target.closest('[data-open-story]');
+      if (storyBtn) { openStoryReader(storyBtn.getAttribute('data-open-story')); return; }
+      var markBtn = e.target.closest('[data-mark-read]');
+      if (markBtn) { handleMarkRead(markBtn.getAttribute('data-id')); return; }
+      var closeStory = e.target.closest('[data-story-close]');
+      if (closeStory) { closeStoryReader(); return; }
+      var docBtn = e.target.closest('[data-open-doc]');
+      if (docBtn) { openReader(docBtn.getAttribute('data-open-doc')); }
     });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
-        if (dom.reader && !dom.reader.hidden) closeReader();
+        if (dom.storyReader && !dom.storyReader.hidden) closeStoryReader();
+        else if (dom.reader && !dom.reader.hidden) closeReader();
         else clearSelection();
       } else if (dom.reader && !dom.reader.hidden && e.key === 'ArrowLeft') {
         readerStep(-1);
@@ -910,16 +1117,11 @@
       }
     });
 
-    var anyRead = Object.keys(S.getRead()).length > 0;
-
     S.fetchIndexData().then(function (index) {
       state.index = index;
-      if (!anyRead) { showEmpty(); return; }
       return S.loadUnlockedData().then(function (files) {
         state.files = files;
-        prepareData(files);
-        dom.empty.hidden = true;
-        dom.layout.hidden = false;
+        rebuildState();
         buildMap();
         initMapEvents();
         initDomain();
@@ -929,12 +1131,12 @@
         applyUrl();
         updateHighlights();
         renderPanel();
+        renderStoriesPanel();
+        updateHints();
         S.setSeenPieces(state.pieces.map(function (p) { return p.id; }));
       });
     }).catch(function (err) {
-      dom.empty.hidden = false;
-      dom.empty.querySelector('h2').textContent = 'No se pudo cargar';
-      dom.empty.querySelector('p').textContent = 'Error al cargar los datos: ' + err.message;
+      S.toast('No se pudieron cargar los datos: ' + err.message);
     });
 
     var resizeTimer = null;

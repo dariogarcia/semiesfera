@@ -1,12 +1,11 @@
 // Núcleo compartido: progreso en el navegador, estados de las historias,
-// cabecera (contador, menú, aviso de primera visita) y avisos.
+// datos de carga perezosa y avisos.
 
 (function () {
   'use strict';
 
   var BASE = window.SEMI_BASE || '';
   var KEY = 'semiesfera.progress';
-  var NOTICE_KEY = 'semiesfera.notice';
   var SEEN_KEY = 'semiesfera.seenPieces';
 
   function u(rel) { return BASE + rel; }
@@ -157,57 +156,16 @@
     }, 4200);
   }
 
-  // -- cabecera -------------------------------------------------------------------
+  // -- reinicio de progreso (delegado, funciona en cualquier página) ----------
 
-  function initHeader() {
-    var counter = document.querySelector('[data-counter]');
-    if (counter) {
-      var total = index().stories.length;
-      var n = readCount();
-      counter.textContent = n + ' de ' + total + ' historias leíd' + (n === 1 ? 'a' : 'as');
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-reset-progress]');
+    if (!btn) return;
+    if (confirm('¿Reiniciar tu progreso en este navegador? Se olvidarán todas las historias marcadas como leídas.')) {
+      resetProgress();
+      location.reload();
     }
-
-    var menu = document.querySelector('[data-menu]');
-    if (menu) {
-      var toggle = menu.querySelector('[data-menu-toggle]');
-      var dropdown = menu.querySelector('.menu-dropdown');
-      toggle.addEventListener('click', function () {
-        var open = dropdown.hidden;
-        dropdown.hidden = !open;
-        toggle.setAttribute('aria-expanded', String(open));
-      });
-      document.addEventListener('click', function (e) {
-        if (!menu.contains(e.target)) {
-          dropdown.hidden = true;
-          toggle.setAttribute('aria-expanded', 'false');
-        }
-      });
-    }
-
-    var resetBtn = document.querySelector('[data-reset-progress]');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', function () {
-        if (confirm('¿Reiniciar tu progreso en este navegador? Se olvidarán todas las historias marcadas como leídas.')) {
-          resetProgress();
-          location.reload();
-        }
-      });
-    }
-
-    var notice = document.querySelector('[data-first-notice]');
-    if (notice) {
-      var seen = false;
-      try { seen = !!localStorage.getItem(NOTICE_KEY); } catch (e) { /* nada */ }
-      if (!seen) notice.hidden = false;
-      var dismiss = notice.querySelector('[data-notice-dismiss]');
-      if (dismiss) dismiss.addEventListener('click', function () {
-        notice.hidden = true;
-        try { localStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* nada */ }
-      });
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', initHeader);
+  });
 
   // -- piezas vistas (para el fundido de revelado) ------------------------------------
 

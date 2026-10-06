@@ -195,6 +195,10 @@ function storyRecord(s) {
     title: s.title,
     volume: s.volume,
     sequence: s.sequence,
+    summary: s.summary,
+    cover: `stories/${s.id}/${s.cover}`,
+    pdf: `stories/${s.id}/${s.pdf}`,
+    bodyHtml: renderMarkdown(s.body),
     reveals: s.reveals,
     pieces: s.reveals.map((pid) => {
       const p = pieceById.get(pid);
@@ -215,23 +219,19 @@ const indexData = {
   mapSize: mapData.size,
   totalPieces: publishedPieces.size,
   complete: { file: 'complete/map.svg', width: mapData.size.width, height: mapData.size.height },
-  stories: published.map((s) => ({ id: s.id, title: s.title, volume: s.volume, sequence: s.sequence }))
+  stories: published.map((s) => ({
+    id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
+    summary: s.summary, cover: `stories/${s.id}/${s.cover}`
+  }))
 };
-const miniIndex = indexData.stories;
+const miniIndex = indexData;
 
 // ---------------------------------------------------------------------------
 // Plantillas
 // ---------------------------------------------------------------------------
 
-const ICONS = {
-  lock: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 7V5a4 4 0 0 1 8 0v2h1v8H3V7h1zm2 0h4V5a2 2 0 0 0-4 0v2z" fill="currentColor"/></svg>',
-  open: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h5c1 0 2 .5 2 1v9c0-.5-1-1-2-1H2V3zm12 0H9c-1 0-2 .5-2 1v9c0-.5 1-1 2-1h5V3z" fill="currentColor"/></svg>',
-  read: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-};
-
-function layout({ prefix, title, desc, main, script, inlineIndex = true }) {
+function layout({ prefix, title, desc, main, script = null, inlineIndex = true }) {
   const p = prefix;
-  const home = p === '' ? './' : p;
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -245,72 +245,38 @@ function layout({ prefix, title, desc, main, script, inlineIndex = true }) {
 <script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(miniIndex)};` : ''}</script>
 </head>
 <body>
-<header class="site-header">
-  <div class="site-header-inner">
-    <a class="brand" href="${home}">Semiesfera</a>
-    <span class="progress-counter" data-counter></span>
-    <nav class="site-nav">
-      <a href="${home}">Historias</a>
-      <a href="${p}explorar/">Explorar</a>
-    </nav>
-    <div class="menu" data-menu>
-      <button class="icon-btn" type="button" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Menú">
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="3.5" r="1.8" fill="currentColor"/><circle cx="9" cy="9" r="1.8" fill="currentColor"/><circle cx="9" cy="14.5" r="1.8" fill="currentColor"/></svg>
-      </button>
-      <div class="menu-dropdown" hidden>
-        <button class="menu-item" type="button" data-reset-progress>Reiniciar mi progreso</button>
-      </div>
-    </div>
-  </div>
-</header>
 ${main}
 <script src="${p}assets/core.js"></script>
-<script src="${p}assets/${script}.js"></script>
+${script ? `<script src="${p}assets/${script}.js"></script>` : ''}
 </body>
 </html>`;
 }
 
-// --- catálogo ---------------------------------------------------------------
+// --- portada ------------------------------------------------------------------
 
-function catalogueMain() {
-  const entries = published.map((s) => `
-    <li class="story-entry" data-id="${s.id}" data-seq="${s.sequence}">
-      <div class="entry-rail">
-        <span class="seq-num">${s.sequence}</span>
-        <span class="state-icon">
-          <span class="icon icon-lock" title="Bloqueada">${ICONS.lock}</span>
-          <span class="icon icon-open" title="Abierta">${ICONS.open}</span>
-          <span class="icon icon-read" title="Leída">${ICONS.read}</span>
-        </span>
-      </div>
-      <div class="entry-main">
-        <h2 class="entry-title"><a href="historias/${s.id}/">${escapeHtml(s.title)}</a></h2>
-        <div class="entry-details">
-          <a class="cover" href="historias/${s.id}/" tabindex="-1" aria-hidden="true"><img src="stories/${s.id}/${s.cover}" alt="" loading="lazy"></a>
-          <div class="entry-info">
-            <p class="volume">${escapeHtml(s.volume)}</p>
-            <p class="summary">${escapeHtml(s.summary)}</p>
-            <div class="entry-actions">
-              <a class="btn" href="historias/${s.id}/" data-read-link>Leer</a>
-              <button class="btn ghost" type="button" data-mark-read data-id="${s.id}">Marcar como leída</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </li>`).join('\n');
-
-  return `<main class="wrap">
-  <section class="hero">
-    <h1>Historias</h1>
-    <p>Un mundo que empieza sin mapa y se dibuja al leer. Solo una historia está abierta cada vez; el resto espera su turno.</p>
-  </section>
-  <div class="first-notice" data-first-notice hidden>
-    <p>Este sitio recuerda qué historias has leído en este dispositivo.</p>
-    <button class="btn small" type="button" data-notice-dismiss>Entendido</button>
+function landingMain() {
+  return `<main class="landing">
+  <div class="landing-inner">
+    <p class="landing-kicker">Semiesfera</p>
+    <h1>Un mundo que se revela al leer</h1>
+    <p class="landing-lead">Semiesfera es un ciclo de historias sobre un mundo que empieza sin mapa. Cada relato añade una pieza al mapa, lugares a la geografía y fechas a la línea de tiempo. Nada se enseña antes de tiempo: el mundo existe en la medida en que lo has leído.</p>
+    <ol class="landing-steps">
+      <li>
+        <h2>Lee en orden</h2>
+        <p>Las historias se abren de una en una. Al principio solo la primera está disponible; el resto espera su turno.</p>
+      </li>
+      <li>
+        <h2>Marca lo leído</h2>
+        <p>Cuando terminas una historia la marcas como leída, y el mapa y la línea de tiempo crecen con lo que esa historia revela.</p>
+      </li>
+      <li>
+        <h2>Explora</h2>
+        <p>Navega el mapa y el tiempo a tu aire. Cada documento enlaza su lugar y su fecha, y cada lugar recuerda sus documentos.</p>
+      </li>
+    </ol>
+    <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
+    <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="link-btn" data-reset-progress>Reiniciar mi progreso</button></p>
   </div>
-  <ol class="story-list" data-story-list>
-${entries}
-  </ol>
 </main>`;
 }
 
@@ -385,38 +351,51 @@ ${docs}
 // --- explorar ---------------------------------------------------------------
 
 const exploreMain = `<main class="explore">
-  <div class="explore-empty" data-empty hidden>
-    <h2>Aún no hay mapa</h2>
-    <p>El mundo empieza sin mapa. Lee la primera historia para empezar a dibujarlo.</p>
-    <p><a class="btn" data-open-link href="#">Ir al catálogo</a></p>
-  </div>
-  <div class="explore-layout" data-explore-layout hidden>
-    <section class="map-view" aria-label="Mapa del mundo">
-      <div class="map-viewport" data-map-viewport tabindex="0">
-        <div class="map-world" data-map-world></div>
+  <section class="map-view" aria-label="Mapa del mundo">
+    <div class="map-viewport" data-map-viewport tabindex="0">
+      <div class="map-world" data-map-world></div>
+    </div>
+    <div class="map-hint" data-map-hint hidden>
+      <h2>Aún no hay mapa</h2>
+      <p>El mundo empieza sin mapa. Lee la primera historia para empezar a dibujarlo.</p>
+    </div>
+    <div class="map-controls">
+      <button class="icon-btn" type="button" data-zoom-in aria-label="Acercar">+</button>
+      <button class="icon-btn" type="button" data-zoom-out aria-label="Alejar">−</button>
+      <button class="icon-btn" type="button" data-zoom-fit aria-label="Ajustar">⤢</button>
+    </div>
+  </section>
+  <section class="timeline-view" aria-label="Línea de tiempo">
+    <div class="tl-head">
+      <span class="tl-title">Línea de tiempo</span>
+      <span class="tl-range-chip" data-range-chip hidden></span>
+    </div>
+    <div class="tl-scroll"><svg class="tl-svg" data-tl-svg aria-label="Documentos en el tiempo"></svg></div>
+    <div class="tl-empty" data-tl-empty hidden>La línea de tiempo se llenará con los documentos de las historias que leas.</div>
+    <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom</div>
+  </section>
+  <aside class="stories-panel" aria-label="Historias">
+    <div class="sp-head">
+      <h2>Historias</h2>
+      <span class="sp-count" data-sp-count></span>
+    </div>
+    <div class="sp-body">
+      <ol class="sp-list" data-sp-list></ol>
+    </div>
+    <div class="sp-foot">
+      <button type="button" class="link-btn" data-reset-progress>Reiniciar mi progreso</button>
+    </div>
+  </aside>
+  <aside class="panel" data-panel hidden>
+    <div class="panel-head">
+      <h2 data-panel-title></h2>
+      <div class="panel-head-actions">
+        <button class="btn small ghost" type="button" data-clear>Limpiar</button>
+        <button class="icon-btn small" type="button" data-panel-close aria-label="Cerrar">✕</button>
       </div>
-      <div class="map-controls">
-        <button class="icon-btn" type="button" data-zoom-in aria-label="Acercar">+</button>
-        <button class="icon-btn" type="button" data-zoom-out aria-label="Alejar">−</button>
-        <button class="icon-btn" type="button" data-zoom-fit aria-label="Ajustar">⤢</button>
-      </div>
-    </section>
-    <section class="timeline-view" aria-label="Línea de tiempo">
-      <div class="tl-head">
-        <span class="tl-title">Línea de tiempo</span>
-        <span class="tl-range-chip" data-range-chip hidden></span>
-      </div>
-      <div class="tl-scroll"><svg class="tl-svg" data-tl-svg aria-label="Documentos en el tiempo"></svg></div>
-      <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom</div>
-    </section>
-    <aside class="panel" data-panel>
-      <div class="panel-head">
-        <h2 data-panel-title>Resultados</h2>
-        <button class="btn small ghost" type="button" data-clear hidden>Limpiar</button>
-      </div>
-      <div class="panel-body" data-panel-body></div>
-    </aside>
-  </div>
+    </div>
+    <div class="panel-body" data-panel-body></div>
+  </aside>
 </main>`;
 
 // ---------------------------------------------------------------------------
@@ -437,10 +416,11 @@ copyDir(ASSETS, path.join(OUT, 'assets'));
 
 writeOut('index.html', layout({
   prefix: '',
-  title: 'Semiesfera — historias',
-  desc: 'Un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
-  main: catalogueMain(),
-  script: 'catalogue'
+  title: 'Semiesfera — un mundo que se revela al leer',
+  desc: 'Un ciclo de historias sobre un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
+  main: landingMain(),
+  script: null,
+  inlineIndex: false
 }));
 
 writeOut('explorar/index.html', layout({

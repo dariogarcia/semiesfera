@@ -3,34 +3,38 @@
 Un mundo que se dibuja al leerlo. **Semiesfera** es un sitio estático de
 historias con dos formas de entrar en el mismo contenido:
 
-- **Por historia:** el catálogo en orden. Solo una historia está abierta a la
-  vez: leerla (marcarla como leída) abre la siguiente.
+- **Por historia:** en orden. Solo una historia está abierta a la vez: leerla
+  (marcarla como leída) abre la siguiente.
 - **Por espacio o tiempo:** el mapa y la línea de tiempo se exploran libremente,
   pero solo muestran lo que el lector ya ha desbloqueado leyendo.
 
 No hay cuentas ni nombres: el progreso se recuerda **por navegador** (local
-storage), sin servidor ni sincronización. El mapa empieza vacío y se va
-revelando por piezas a medida que se leen las historias.
+storage), sin servidor ni sincronización — esto se explica en la portada. El
+mapa empieza vacío y se va revelando por piezas a medida que se leen las
+historias.
 
 ## Cómo funciona
 
 | Ruta | Propósito |
 |---|---|
-| `/` | El catálogo: una lista ordenada de historias (leídas, abierta o bloqueadas) |
-| `/historias/<id>` | Página de la historia: intro, PDF, documentos, botón **Marcar como leída**, y tras leerla el mapa revelado con sus puntos y una mini línea de tiempo |
-| `/explorar` | Mapa y línea de tiempo completos, con panel de resultados, mostrando solo lo desbloqueado |
+| `/` | Portada: qué es el sitio, cómo funciona, y el botón **Entrar** |
+| `/explorar` | La aplicación: mapa de fondo, línea de tiempo abajo, panel de historias a un lado y el lector de historias superpuesto |
 | `/explorar?place=…&from=…&to=…&doc=…` | La misma vista con una selección fija (enlace compartible) |
+| `/historias/<id>` | Página estática de la historia (para enlaces compartidos): intro, PDF, documentos, botón **Marcar como leída** |
+
+`/explorar` muestra en el panel solo las historias ya desbloqueadas (las leídas
+y la abierta); el resto aparece al marcar la anterior como leída. El lector de
+historias se abre sobre el mapa: cuerpo en markdown, documentos enlazados con
+el mapa y la línea de tiempo, y el botón **Marcar como leída** al pie.
 
 Las páginas de historia son HTML estático puro (indexables, RSS, sin scripts).
-Solo el progreso, `/explorar` y las mini-vistas necesitan JavaScript.
+Solo el progreso y `/explorar` necesitan JavaScript.
 
 ### Reglas de desbloqueo (resumen)
 
 - Una historia está **abierta** si es la primera o si la anterior está leída;
-  **bloqueada** en otro caso. Las entradas bloqueadas muestran solo el título.
+  las demás no aparecen en el panel de historias hasta su turno.
 - Una historia se considera leída únicamente al pulsar **Marcar como leída**.
-  El botón también existe en las entradas bloqueadas, para saltar adelante (con
-  confirmación).
 - Al marcar una historia se desbloquean sus documentos, etiquetas de lugar y
   fecha, puntos en el mapa y en la línea de tiempo, y las piezas del mapa que
   revela.

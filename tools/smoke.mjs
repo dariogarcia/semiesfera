@@ -20,16 +20,22 @@ function exists(p) { return fs.existsSync(path.join(PUBLIC, p)); }
 
 console.log('Smoke test de public/\n');
 
-// catálogo y páginas
-ok(exists('index.html'), 'existe index.html (catálogo)');
+// portada, explorar y páginas
+ok(exists('index.html'), 'existe index.html (portada)');
 ok(exists('explorar/index.html'), 'existe explorar/index.html');
 ok(exists('rss.xml'), 'existe rss.xml');
 const indexHtml = read('index.html');
+ok(indexHtml.includes('explorar/'), 'la portada enlaza a explorar/');
+ok(indexHtml.includes('Entrar'), 'la portada tiene el botón de entrada');
+ok(!indexHtml.includes('site-header'), 'la portada no tiene barra superior');
 
 // datos
 const index = JSON.parse(read('data/index.json'));
 ok(Array.isArray(index.stories) && index.stories.length > 0, 'data/index.json con historias');
 ok(typeof index.totalPieces === 'number' && index.totalPieces > 0, 'data/index.json con totalPieces');
+const exploreHtml = read('explorar/index.html');
+ok(exploreHtml.includes('data-sp-list'), 'explorar tiene el panel de historias');
+ok(exploreHtml.includes('data-tl-svg'), 'explorar tiene la línea de tiempo');
 
 // historias publicadas: página, datos, recursos
 for (const s of index.stories) {
@@ -37,10 +43,10 @@ for (const s of index.stories) {
   ok(exists(`data/${s.id}.json`), `datos de ${s.id}`);
   const data = JSON.parse(read(`data/${s.id}.json`));
   ok(data.documents.length > 0, `${s.id} tiene documentos`);
+  ok(typeof data.bodyHtml === 'string' && data.bodyHtml.length > 0, `${s.id} tiene el cuerpo en HTML`);
   for (const d of data.documents) {
     ok(exists(d.image), `imagen de documento ${d.id}`);
   }
-  ok(indexHtml.includes(s.title), `el catálogo lista "${s.title}"`);
   const storyHtml = read(`historias/${s.id}/index.html`);
   ok(storyHtml.includes(s.title), `la página de ${s.id} tiene el título`);
 }
@@ -90,7 +96,8 @@ for (const id of storyDirs) {
     ok(!exists(`historias/${id}`), `historia no publicada ${id} sin página`);
     ok(!exists(`data/${id}.json`), `historia no publicada ${id} sin datos`);
     ok(!exists(`stories/${id}`), `historia no publicada ${id} sin recursos`);
-    ok(!indexHtml.includes(id), `el catálogo no menciona ${id}`);
+    ok(!indexHtml.includes(id), `la portada no menciona ${id}`);
+    ok(!exploreHtml.includes(id), `explorar no menciona ${id}`);
   }
 }
 
