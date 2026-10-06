@@ -40,5 +40,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Comprobar si Pages está disponible
+        id: pages_check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" > /dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Pages no está habilitado (repositorio privado sin plan compatible)."
+            echo "El sitio se puede servir en local con: npm run build && npm run serve"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
       - id: deployment
+        if: steps.pages_check.outputs.available == 'true'
         uses: actions/deploy-pages@v4
