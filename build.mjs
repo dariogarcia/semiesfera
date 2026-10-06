@@ -1,0 +1,515 @@
+// Generador del sitio Semiesfera.
+// Node >= 18, sin dependencias. Uso: node build.mjs
+// Variables: SEMIESFERA_TODAY (fecha simulada YYYY-MM-DD), SEMIESFERA_URL (URL pública para RSS).
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { splitFrontmatter, renderMarkdown, escapeHtml, parseYaml } from './tools/lib.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.');
+const CONTENT = path.join(ROOT, 'content');
+const ASSETS = path.join(ROOT, 'assets');
+const OUT = path.join(ROOT, 'public');
+
+const TODAY = process.env.SEMIESFERA_TODAY || new Date().toISOString().slice(0, 10);
+const SITE_URL = (process.env.SEMIESFERA_URL || 'https://dariogarcia.github.io/semiesfera/').replace(/\/?$/, '/');
+
+const problems = [];
+const fail = (msg) => problems.push(msg);
+const readContent = (rel) => fs.readFileSync(path.join(CONTENT, rel), 'utf8');
+const jsonInline = (v) => JSON.stringify(v).replace(/</g, '\\u003c');
+
+// ---------------------------------------------------------------------------
+// Carga y validación
+// ---------------------------------------------------------------------------
+
+const places = JSON.parse(readContent('places.json')).places;
+const placeById = new Map();
+for (const p of places) {
+  if (!p.id || !p.name) fail(`places.json: lugar sin id o nombre (${JSON.stringify(p)})`);
+  else if (placeById.has(p.id)) fail(`places.json: id de lugar duplicado "${p.id}"`);
+  else if (!p.geometry || !['point', 'circle'].includes(p.geometry.type)) fail(`Lugar "${p.id}": la geometría debe ser point o circle`);
+  else if (typeof p.geometry.x !== 'number' || typeof p.geometry.y !== 'number') fail(`Lugar "${p.id}": faltan x/y`);
+  else if (p.geometry.type === 'circle' && !(p.geometry.radius > 0)) fail(`Lugar "${p.id}": radio de círculo no válido`);
+  else placeById.set(p.id, p);
+}
+for (const p of places) {
+  if (p.parent && !placeById.has(p.parent)) fail(`Lugar "${p.id}": parent desconocido "${p.parent}"`);
+}
+
+const mapData = JSON.parse(readContent('map-pieces.json'));
+const pieceById = new Map();
+for (const piece of mapData.pieces) {
+  if (!piece.id || !piece.file) fail(`map-pieces.json: pieza sin id o file (${JSON.stringify(piece)})`);
+  else if (pieceById.has(piece.id)) fail(`map-pieces.json: id de pieza duplicado "${piece.id}"`);
+  else if (![piece.x, piece.y, piece.width, piece.height].every((n) => typeof n === 'number' && n >= 0)) fail(`Pieza "${piece.id}": x/y/width/height deben ser números`);
+  else if (!fs.existsSync(path.join(CONTENT, piece.file))) fail(`Pieza "${piece.id}": no existe el archivo ${piece.file}`);
+  else pieceById.set(piece.id, piece);
+}
+
+const eras = (() => {
+  try {
+    const data = parseYaml(readContent('eras.yaml'));
+    return Array.isArray(data?.eras) ? data.eras : [];
+  } catch (e) {
+    fail(`eras.yaml: ${e.message}`);
+    return [];
+  }
+})();
+for (const era of eras) {
+  if (!era.name || typeof era.from !== 'number' || typeof era.to !== 'number' || era.from >= era.to) {
+    fail(`eras.yaml: era no válida (${JSON.stringify(era)}): se necesita name, from y to (from < to)`);
+  }
+}
+
+const storiesDir = path.join(CONTENT, 'stories');
+const stories = [];
+for (const id of fs.readdirSync(storiesDir).sort()) {
+  const dir = path.join(storiesDir, id);
+  if (!fs.statSync(dir).isDirectory()) continue;
+  const file = path.join(dir, 'story.md');
+  if (!fs.existsSync(file)) { fail(`stories/${id}: falta story.md`); continue; }
+  let parsed;
+  try {
+    parsed = splitFrontmatter(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    fail(`stories/${id}: ${e.message}`);
+    continue;
+  }
+  const s = { id, ...parsed.data, body: parsed.body };
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) fail(`stories/${id}: el id debe ser un slug (minúsculas, números y guiones)`);
+  for (const field of ['title', 'volume', 'summary']) {
+    if (typeof s[field] !== 'string' || !s[field].trim()) fail(`stories/${id}: falta el campo "${field}"`);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s.publish))) fail(`stories/${id}: "publish" debe ser una fecha YYYY-MM-DD`);
+  if (!Number.isInteger(s.sequence)) fail(`stories/${id}: "sequence" debe ser un entero`);
+  for (const field of ['cover', 'pdf']) {
+    if (typeof s[field] !== 'string' || !fs.existsSync(path.join(dir, s[field]))) fail(`stories/${id}: no existe el archivo "${field}" (${s[field]})`);
+  }
+  if (!Array.isArray(s.reveals)) fail(`stories/${id}: "reveals" debe ser una lista`);
+  else for (const pid of s.reveals) if (!pieceById.has(pid)) fail(`stories/${id}: pieza desconocida "${pid}" en reveals`);
+  if (!Array.isArray(s.documents) || !s.documents.length) fail(`stories/${id}: "documents" debe ser una lista no vacía`);
+  else s.documents.forEach((d, i) => {
+    const where = `stories/${id}, documento ${i + 1}`;
+    for (const field of ['image', 'alt', 'label']) {
+      if (typeof d[field] !== 'string' || !d[field].trim()) fail(`${where}: falta "${field}"`);
+    }
+    if (typeof d.image === 'string' && !fs.existsSync(path.join(dir, d.image))) fail(`${where}: no existe la imagen ${d.image}`);
+    if (!Array.isArray(d.places) || !d.places.length) fail(`${where}: "places" debe ser una lista no vacía`);
+    else for (const pid of d.places) if (!placeById.has(pid)) fail(`${where}: lugar desconocido "${pid}"`);
+    if (typeof d.year !== 'number' || !Number.isInteger(d.year)) fail(`${where}: "year" debe ser un entero`);
+    if (d.yearEnd != null && (typeof d.yearEnd !== 'number' || d.yearEnd < d.year)) fail(`${where}: "yearEnd" debe ser >= year`);
+  });
+  stories.push(s);
+}
+
+// sequence: único, desde 1, sin huecos
+{
+  const seqs = stories.map((s) => s.sequence).sort((a, b) => a - b);
+  seqs.forEach((q, i) => {
+    if (q !== i + 1) {
+      fail(`Los números de sequence deben ser únicos y consecutivos desde 1 (el valor ${i + 1} no está; hay ${q}).`);
+    }
+  });
+}
+
+// cada lugar que usa una historia (incluidos sus ancestros) debe estar
+// dentro de una pieza que esa misma historia revela
+function insidePiece(geometry, piece) {
+  if (geometry.type === 'point') {
+    return geometry.x >= piece.x && geometry.x <= piece.x + piece.width &&
+      geometry.y >= piece.y && geometry.y <= piece.y + piece.height;
+  }
+  return geometry.x - geometry.radius >= piece.x && geometry.x + geometry.radius <= piece.x + piece.width &&
+    geometry.y - geometry.radius >= piece.y && geometry.y + geometry.radius <= piece.y + piece.height;
+}
+for (const s of stories) {
+  const used = new Set();
+  for (const d of s.documents) {
+    for (const pid of d.places) {
+      let cur = placeById.get(pid);
+      while (cur) {
+        used.add(cur.id);
+        cur = cur.parent ? placeById.get(cur.parent) : null;
+      }
+    }
+  }
+  const revealed = s.reveals.map((pid) => pieceById.get(pid)).filter(Boolean);
+  for (const pid of used) {
+    const place = placeById.get(pid);
+    if (!revealed.some((piece) => insidePiece(place.geometry, piece))) {
+      fail(`stories/${s.id}: el lugar "${pid}" no está dentro de ninguna pieza que esta historia revele.`);
+    }
+  }
+}
+
+if (problems.length) {
+  console.error(`\nEl build falló con ${problems.length} error(es):\n`);
+  for (const p of problems) console.error(`  - ${p}`);
+  console.error('');
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// Filtro de publicación y derivaciones
+// ---------------------------------------------------------------------------
+
+const published = stories
+  .filter((s) => String(s.publish) <= TODAY)
+  .sort((a, b) => a.sequence - b.sequence);
+
+const publishedPieces = new Map();
+for (const s of published) for (const pid of s.reveals) publishedPieces.set(pid, pieceById.get(pid));
+
+function storyRecord(s) {
+  const placeIds = new Set();
+  for (const d of s.documents) {
+    for (const pid of d.places) {
+      let cur = placeById.get(pid);
+      while (cur) {
+        placeIds.add(cur.id);
+        cur = cur.parent ? placeById.get(cur.parent) : null;
+      }
+    }
+  }
+  const docs = s.documents.map((d, i) => ({
+    id: `${s.id}-${i + 1}`,
+    order: i + 1,
+    image: `stories/${s.id}/${d.image}`,
+    alt: d.alt,
+    label: d.label,
+    places: d.places,
+    year: d.year,
+    yearEnd: d.yearEnd ?? null,
+    story: s.id,
+    storyTitle: s.title,
+    sequence: s.sequence
+  }));
+  const years = s.documents.flatMap((d) => [d.year, d.yearEnd ?? d.year]);
+  const storyEras = eras.filter((era) =>
+    s.documents.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
+  );
+  return {
+    id: s.id,
+    title: s.title,
+    volume: s.volume,
+    sequence: s.sequence,
+    reveals: s.reveals,
+    pieces: s.reveals.map((pid) => {
+      const p = pieceById.get(pid);
+      return { id: p.id, file: p.file, x: p.x, y: p.y, width: p.width, height: p.height };
+    }),
+    places: [...placeIds].map((pid) => {
+      const p = placeById.get(pid);
+      return { id: p.id, name: p.name, parent: p.parent ?? null, geometry: p.geometry };
+    }),
+    documents: docs,
+    span: { from: Math.min(...years), to: Math.max(...years) },
+    eras: storyEras
+  };
+}
+
+const records = new Map(published.map((s) => [s.id, storyRecord(s)]));
+const indexData = {
+  mapSize: mapData.size,
+  totalPieces: publishedPieces.size,
+  complete: { file: 'complete/map.svg', width: mapData.size.width, height: mapData.size.height },
+  stories: published.map((s) => ({ id: s.id, title: s.title, volume: s.volume, sequence: s.sequence }))
+};
+const miniIndex = indexData.stories;
+
+// ---------------------------------------------------------------------------
+// Plantillas
+// ---------------------------------------------------------------------------
+
+const ICONS = {
+  lock: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 7V5a4 4 0 0 1 8 0v2h1v8H3V7h1zm2 0h4V5a2 2 0 0 0-4 0v2z" fill="currentColor"/></svg>',
+  open: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h5c1 0 2 .5 2 1v9c0-.5-1-1-2-1H2V3zm12 0H9c-1 0-2 .5-2 1v9c0-.5 1-1 2-1h5V3z" fill="currentColor"/></svg>',
+  read: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 8.5l3.5 3.5 7-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+function layout({ prefix, title, desc, main, script, inlineIndex = true }) {
+  const p = prefix;
+  const home = p === '' ? './' : p;
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(title)}</title>
+<meta name="description" content="${escapeHtml(desc)}">
+<link rel="stylesheet" href="${p}assets/site.css">
+<link rel="alternate" type="application/rss+xml" title="Semiesfera" href="${p}rss.xml">
+<script>document.documentElement.classList.add('js');</script>
+<script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(miniIndex)};` : ''}</script>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="${home}">Semiesfera</a>
+    <span class="progress-counter" data-counter></span>
+    <nav class="site-nav">
+      <a href="${home}">Historias</a>
+      <a href="${p}explorar/">Explorar</a>
+    </nav>
+    <div class="menu" data-menu>
+      <button class="icon-btn" type="button" data-menu-toggle aria-haspopup="true" aria-expanded="false" aria-label="Menú">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="3.5" r="1.8" fill="currentColor"/><circle cx="9" cy="9" r="1.8" fill="currentColor"/><circle cx="9" cy="14.5" r="1.8" fill="currentColor"/></svg>
+      </button>
+      <div class="menu-dropdown" hidden>
+        <button class="menu-item" type="button" data-reset-progress>Reiniciar mi progreso</button>
+      </div>
+    </div>
+  </div>
+</header>
+${main}
+<script src="${p}assets/core.js"></script>
+<script src="${p}assets/${script}.js"></script>
+</body>
+</html>`;
+}
+
+// --- catálogo ---------------------------------------------------------------
+
+function catalogueMain() {
+  const entries = published.map((s) => `
+    <li class="story-entry" data-id="${s.id}" data-seq="${s.sequence}">
+      <div class="entry-rail">
+        <span class="seq-num">${s.sequence}</span>
+        <span class="state-icon">
+          <span class="icon icon-lock" title="Bloqueada">${ICONS.lock}</span>
+          <span class="icon icon-open" title="Abierta">${ICONS.open}</span>
+          <span class="icon icon-read" title="Leída">${ICONS.read}</span>
+        </span>
+      </div>
+      <div class="entry-main">
+        <h2 class="entry-title"><a href="historias/${s.id}/">${escapeHtml(s.title)}</a></h2>
+        <div class="entry-details">
+          <a class="cover" href="historias/${s.id}/" tabindex="-1" aria-hidden="true"><img src="stories/${s.id}/${s.cover}" alt="" loading="lazy"></a>
+          <div class="entry-info">
+            <p class="volume">${escapeHtml(s.volume)}</p>
+            <p class="summary">${escapeHtml(s.summary)}</p>
+            <div class="entry-actions">
+              <a class="btn" href="historias/${s.id}/" data-read-link>Leer</a>
+              <button class="btn ghost" type="button" data-mark-read data-id="${s.id}">Marcar como leída</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>`).join('\n');
+
+  return `<main class="wrap">
+  <section class="hero">
+    <h1>Historias</h1>
+    <p>Un mundo que empieza sin mapa y se dibuja al leer. Solo una historia está abierta cada vez; el resto espera su turno.</p>
+  </section>
+  <div class="first-notice" data-first-notice hidden>
+    <p>Este sitio recuerda qué historias has leído en este dispositivo.</p>
+    <button class="btn small" type="button" data-notice-dismiss>Entendido</button>
+  </div>
+  <ol class="story-list" data-story-list>
+${entries}
+  </ol>
+</main>`;
+}
+
+// --- página de historia -----------------------------------------------------
+
+function storyMain(s, rec) {
+  const docs = rec.documents.map((d) => `
+      <li class="doc" data-doc="${d.order}" data-doc-id="${d.id}">
+        <figure>
+          <img src="${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
+          <figcaption>
+            <span class="doc-label">${escapeHtml(d.label)}</span>
+            <span class="doc-meta" data-doc-meta hidden></span>
+          </figcaption>
+        </figure>
+      </li>`).join('\n');
+
+  const pageData = {
+    id: s.id,
+    title: s.title,
+    volume: s.volume,
+    sequence: s.sequence,
+    reveals: s.reveals,
+    pieceCount: s.reveals.length,
+    placeNames: Object.fromEntries(rec.places.map((p) => [p.id, p.name])),
+    docs: rec.documents.map((d) => ({
+      n: d.order, id: d.id, label: d.label, places: d.places, year: d.year, yearEnd: d.yearEnd
+    }))
+  };
+
+  return `<main class="wrap story" data-story-id="${s.id}">
+  <div class="locked-notice" data-locked-notice hidden>
+    <h2>Esta historia llega más tarde</h2>
+    <p>Todavía no has leído lo que viene antes. El mundo se revela en orden, una historia cada vez.</p>
+    <p><a class="btn" data-next-link href="#">Leer la historia que toca ahora</a></p>
+  </div>
+  <div class="story-content" data-story-content>
+    <header class="story-head">
+      <p class="volume">${escapeHtml(s.volume)}</p>
+      <h1>${escapeHtml(s.title)}</h1>
+      <div class="story-head-grid">
+        <img class="cover" src="stories/${s.id}/${s.cover}" alt="Portada de ${escapeHtml(s.title)}">
+        <div class="story-head-info">
+          <p class="summary">${escapeHtml(s.summary)}</p>
+          <div class="entry-actions">
+            <a class="btn" href="stories/${s.id}/${s.pdf}" download>Descargar PDF</a>
+            <button class="btn primary" type="button" data-mark-read data-id="${s.id}">Marcar como leída</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="story-body markdown">
+${renderMarkdown(s.body)}
+    </div>
+    <section class="story-docs">
+      <h2>Documentos</h2>
+      <ol class="doc-list">
+${docs}
+      </ol>
+    </section>
+    <section class="story-rewards" data-rewards hidden>
+      <h2>Lo que revela esta historia</h2>
+      <div class="minimap-frame"><div class="minimap-world" data-minimap></div></div>
+      <div class="minitimeline" data-minitimeline aria-label="Mini línea de tiempo de la historia"></div>
+      <p class="reward-hint"><a href="../../explorar/">Explorar el mapa completo</a></p>
+    </section>
+  </div>
+</main>
+<script>window.SEMI_PAGE=${jsonInline(pageData)};</script>`;
+}
+
+// --- explorar ---------------------------------------------------------------
+
+const exploreMain = `<main class="explore">
+  <div class="explore-empty" data-empty hidden>
+    <h2>Aún no hay mapa</h2>
+    <p>El mundo empieza sin mapa. Lee la primera historia para empezar a dibujarlo.</p>
+    <p><a class="btn" data-open-link href="#">Ir al catálogo</a></p>
+  </div>
+  <div class="explore-layout" data-explore-layout hidden>
+    <section class="map-view" aria-label="Mapa del mundo">
+      <div class="map-viewport" data-map-viewport tabindex="0">
+        <div class="map-world" data-map-world></div>
+      </div>
+      <div class="map-controls">
+        <button class="icon-btn" type="button" data-zoom-in aria-label="Acercar">+</button>
+        <button class="icon-btn" type="button" data-zoom-out aria-label="Alejar">−</button>
+        <button class="icon-btn" type="button" data-zoom-fit aria-label="Ajustar">⤢</button>
+      </div>
+    </section>
+    <section class="timeline-view" aria-label="Línea de tiempo">
+      <div class="tl-head">
+        <span class="tl-title">Línea de tiempo</span>
+        <span class="tl-range-chip" data-range-chip hidden></span>
+      </div>
+      <div class="tl-scroll"><svg class="tl-svg" data-tl-svg aria-label="Documentos en el tiempo"></svg></div>
+      <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom</div>
+    </section>
+    <aside class="panel" data-panel>
+      <div class="panel-head">
+        <h2 data-panel-title>Resultados</h2>
+        <button class="btn small ghost" type="button" data-clear hidden>Limpiar</button>
+      </div>
+      <div class="panel-body" data-panel-body></div>
+    </aside>
+  </div>
+</main>`;
+
+// ---------------------------------------------------------------------------
+// Escritura
+// ---------------------------------------------------------------------------
+
+fs.rmSync(OUT, { recursive: true, force: true });
+const writeOut = (rel, content) => {
+  const dest = path.join(OUT, rel);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, content);
+};
+const copyDir = (from, to) => {
+  fs.cpSync(from, to, { recursive: true });
+};
+
+copyDir(ASSETS, path.join(OUT, 'assets'));
+
+writeOut('index.html', layout({
+  prefix: '',
+  title: 'Semiesfera — historias',
+  desc: 'Un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
+  main: catalogueMain(),
+  script: 'catalogue'
+}));
+
+writeOut('explorar/index.html', layout({
+  prefix: '../',
+  title: 'Explorar — Semiesfera',
+  desc: 'Mapa y línea de tiempo del mundo de Semiesfera, con lo que has desbloqueado leyendo.',
+  main: exploreMain,
+  script: 'explore'
+}));
+
+for (const s of published) {
+  const rec = records.get(s.id);
+  writeOut(`historias/${s.id}/index.html`, layout({
+    prefix: '../../',
+    title: `${s.title} — Semiesfera`,
+    desc: s.summary,
+    main: storyMain(s, rec),
+    script: 'story'
+  }));
+  for (const f of fs.readdirSync(path.join(CONTENT, 'stories', s.id))) {
+    if (f === 'story.md') continue;
+    copyDir(path.join(CONTENT, 'stories', s.id, f), path.join(OUT, 'stories', s.id, f));
+  }
+}
+
+writeOut('data/index.json', JSON.stringify(indexData));
+for (const rec of records.values()) writeOut(`data/${rec.id}.json`, JSON.stringify(rec));
+
+for (const piece of publishedPieces.values()) {
+  copyDir(path.join(CONTENT, piece.file), path.join(OUT, piece.file));
+}
+
+// mapa completo: si existe el editado a mano y todas las piezas están
+// publicadas, se usa; si no, se compone solo con las piezas publicadas
+const allPublished = mapData.pieces.every((p) => publishedPieces.has(p.id));
+const authoredComplete = path.join(CONTENT, mapData.complete.file);
+if (allPublished && fs.existsSync(authoredComplete)) {
+  copyDir(authoredComplete, path.join(OUT, mapData.complete.file));
+} else {
+  const inner = [...publishedPieces.values()].map((p) => {
+    const svg = fs.readFileSync(path.join(CONTENT, p.file), 'utf8');
+    const body = svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+    return `<svg x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}">${body}</svg>`;
+  }).join('\n');
+  writeOut(mapData.complete.file,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${mapData.size.width}" height="${mapData.size.height}" viewBox="0 0 ${mapData.size.width} ${mapData.size.height}">\n${inner}\n</svg>\n`);
+}
+
+// RSS
+const rfc822 = (dateStr) => new Date(`${dateStr}T12:00:00Z`).toUTCString();
+writeOut('rss.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Semiesfera</title>
+<link>${SITE_URL}</link>
+<description>Un mundo que empieza sin mapa y se dibuja al leer.</description>
+<language>es</language>
+${published.map((s) => `  <item>
+    <title>${escapeHtml(s.title)}</title>
+    <link>${SITE_URL}historias/${s.id}/</link>
+    <guid>${SITE_URL}historias/${s.id}/</guid>
+    <pubDate>${rfc822(s.publish)}</pubDate>
+    <description>${escapeHtml(s.summary)}</description>
+  </item>`).join('\n')}
+</channel>
+</rss>
+`);
+
+console.log(`Build correcto (${TODAY}):`);
+console.log(`  historias publicadas: ${published.length} de ${stories.length}`);
+console.log(`  piezas del mapa:      ${publishedPieces.size} de ${mapData.pieces.length}`);
+console.log(`  salida:               public/`);
