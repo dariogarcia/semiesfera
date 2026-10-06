@@ -350,7 +350,7 @@ ${docs}
 
 // --- explorar ---------------------------------------------------------------
 
-const exploreMain = `<main class="explore">
+const exploreMain = `<main class="explore" data-explore>
   <section class="map-view" aria-label="Mapa del mundo">
     <div class="map-viewport" data-map-viewport tabindex="0">
       <div class="map-world" data-map-world></div>
@@ -378,6 +378,7 @@ const exploreMain = `<main class="explore">
     <div class="sp-head">
       <h2>Historias</h2>
       <span class="sp-count" data-sp-count></span>
+      <button class="icon-btn panel-toggle" type="button" data-toggle-panel="stories" aria-label="Ocultar panel de historias" title="Ocultar">⟨</button>
     </div>
     <div class="sp-body">
       <ol class="sp-list" data-sp-list></ol>
@@ -386,6 +387,19 @@ const exploreMain = `<main class="explore">
       <button type="button" class="link-btn" data-reset-progress>Reiniciar mi progreso</button>
     </div>
   </aside>
+  <aside class="docs-panel" aria-label="Documentos">
+    <div class="dp-head">
+      <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
+      <h2>Documentos</h2>
+      <span class="dp-count" data-dp-count></span>
+    </div>
+    <div class="dp-body">
+      <ol class="dp-list" data-dp-list></ol>
+      <p class="dp-none" data-dp-none>Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.</p>
+    </div>
+  </aside>
+  <button class="panel-tab left" type="button" data-show-panel="stories" hidden>Historias</button>
+  <button class="panel-tab right" type="button" data-show-panel="docs" hidden>Documentos</button>
   <aside class="panel" data-panel hidden>
     <div class="panel-head">
       <h2 data-panel-title></h2>

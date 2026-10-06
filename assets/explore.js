@@ -23,7 +23,9 @@
     preview: null,
     readerDoc: null,
     readerStory: null,
-    lockedNotice: false
+    readerRecs: {},
+    lockedNotice: false,
+    panels: { stories: true, docs: true }
   };
 
   var dom = {};
@@ -747,7 +749,7 @@
     }
     if (!dom.reader) buildReader();
     updateReader();
-    if (revealed) renderPanel();
+    if (revealed) { renderPanel(); renderDocsPanel(); }
     dom.reader.hidden = false;
     document.body.classList.add('reader-open');
   }
@@ -808,6 +810,7 @@
     syncUrl();
     updateHighlights();
     renderPanel();
+    renderDocsPanel();
   }
 
   function clearSelection() {
@@ -820,6 +823,7 @@
     renderTimeline();
     updateHighlights();
     renderPanel();
+    renderDocsPanel();
     updateRangeChip();
   }
 
@@ -858,36 +862,10 @@
     updateRangeChip();
   }
 
-  // -- arranque ------------------------------------------------------------------------------
-
-  function collectDom() {
-    dom.viewport = document.querySelector('[data-map-viewport]');
-    dom.world = document.querySelector('[data-map-world]');
-    dom.mapHint = document.querySelector('[data-map-hint]');
-    dom.tlSvg = document.querySelector('[data-tl-svg]');
-    dom.tlEmpty = document.querySelector('[data-tl-empty]');
-    dom.rangeChip = document.querySelector('[data-range-chip]');
-    dom.panel = document.querySelector('[data-panel]');
-    dom.panelBody = document.querySelector('[data-panel-body]');
-    dom.panelTitle = document.querySelector('[data-panel-title]');
-    dom.clearBtn = document.querySelector('[data-clear]');
-    dom.panelClose = document.querySelector('[data-panel-close]');
-    dom.spList = document.querySelector('[data-sp-list]');
-    dom.spCount = document.querySelector('[data-sp-count]');
-  }
-
   // -- panel de historias ---------------------------------------------------------------
 
   function storyMeta(id) {
     return S.bySeq().filter(function (s) { return s.id === id; })[0] || null;
-  }
-
-  function nextStoryOf(id) {
-    var list = S.bySeq();
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].id === id) return list[i + 1] || null;
-    }
-    return null;
   }
 
   function renderStoriesPanel() {
@@ -924,6 +902,65 @@
     dom.spCount.textContent = n + ' / ' + S.bySeq().length;
   }
 
+  // -- panel de documentos (lado derecho) ------------------------------------------------
+
+  function renderDocsPanel() {
+    if (!dom.dpList) return;
+    var html = '';
+    state.docs.forEach(function (d) {
+      var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
+      html += '<li class="dp-entry' + (state.sel.doc === d.id ? ' active' : '') + '">' +
+        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
+        '<span class="dp-year">' + S.esc(span) + '</span>' +
+        '<span class="dp-label">' + S.esc(d.label) + '</span>' +
+        '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' +
+        '</button></li>';
+    });
+    dom.dpList.innerHTML = html;
+    dom.dpNone.hidden = state.docs.length > 0;
+    dom.dpCount.textContent = state.docs.length ? state.docs.length + (state.docs.length === 1 ? ' documento' : ' documentos') : '';
+    dom.dpList.querySelectorAll('[data-doc-ref]').forEach(function (b) {
+      var docId = b.getAttribute('data-doc-ref');
+      b.addEventListener('mouseenter', function () { setPreview({ type: 'docs', ids: [docId] }); });
+      b.addEventListener('mouseleave', function () { setPreview(null); });
+    });
+  }
+
+  // -- visibilidad de los paneles ----------------------------------------------------------
+
+  var PANELS_KEY = 'semiesfera.panels';
+
+  function loadPanels() {
+    try {
+      var raw = localStorage.getItem(PANELS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (typeof p.stories === 'boolean') state.panels.stories = p.stories;
+        if (typeof p.docs === 'boolean') state.panels.docs = p.docs;
+      }
+    } catch (e) { /* ignora */ }
+  }
+
+  function savePanels() {
+    try { localStorage.setItem(PANELS_KEY, JSON.stringify(state.panels)); } catch (e) { /* ignora */ }
+  }
+
+  function applyPanels() {
+    if (!dom.exploreEl) return;
+    dom.exploreEl.classList.toggle('stories-hidden', !state.panels.stories);
+    dom.exploreEl.classList.toggle('docs-hidden', !state.panels.docs);
+    dom.panelTabs.forEach(function (t) {
+      var name = t.getAttribute('data-show-panel');
+      t.hidden = !!state.panels[name];
+    });
+  }
+
+  function setPanel(name, visible) {
+    state.panels[name] = visible;
+    savePanels();
+    applyPanels();
+  }
+
   // -- lector de historia ----------------------------------------------------------------
 
   function revealMessage(rec) {
@@ -950,12 +987,11 @@
     }).join('');
 
     var foot;
-    var next = nextStoryOf(rec.id);
     if (!isRead) {
       foot = '<button type="button" class="btn primary" data-mark-read data-id="' + S.esc(rec.id) + '">Marcar como leída</button>';
     } else {
       foot = '<p class="sp-revealed">Has revelado: ' + S.esc(revealMessage(rec)) + '.</p>' +
-        (next ? '<button type="button" class="btn primary" data-open-story="' + S.esc(next.id) + '">Siguiente: ' + S.esc(next.title) + '</button>' : '<p class="sp-revealed">Has llegado al final de lo publicado hasta hoy.</p>');
+        '<p class="sheet-foot-hint">Cierra el lector y vuelve al mapa para seguir explorando.</p>';
     }
 
     return '<div class="reader-backdrop" data-story-close></div>' +
@@ -1054,10 +1090,12 @@
       addRecordToState(rec);
       refreshWorld();
       renderStoriesPanel();
+      renderDocsPanel();
       if (state.readerStory === id) fillStoryReader(rec);
       S.toast('Historia marcada como leída: ' + revealMessage(rec) + '.');
     }).catch(function () {
       renderStoriesPanel();
+      renderDocsPanel();
       S.toast('Historia marcada como leída.');
     });
   }
@@ -1086,10 +1124,17 @@
     dom.panelClose = document.querySelector('[data-panel-close]');
     dom.spList = document.querySelector('[data-sp-list]');
     dom.spCount = document.querySelector('[data-sp-count]');
+    dom.exploreEl = document.querySelector('[data-explore]');
+    dom.dpList = document.querySelector('[data-dp-list]');
+    dom.dpCount = document.querySelector('[data-dp-count]');
+    dom.dpNone = document.querySelector('[data-dp-none]');
+    dom.panelTabs = Array.prototype.slice.call(document.querySelectorAll('[data-show-panel]'));
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     collectDom();
+    loadPanels();
+    applyPanels();
 
     dom.clearBtn.addEventListener('click', clearSelection);
     dom.panelClose.addEventListener('click', clearSelection);
@@ -1101,6 +1146,10 @@
       if (markBtn) { handleMarkRead(markBtn.getAttribute('data-id')); return; }
       var closeStory = e.target.closest('[data-story-close]');
       if (closeStory) { closeStoryReader(); return; }
+      var hideBtn = e.target.closest('[data-toggle-panel]');
+      if (hideBtn) { setPanel(hideBtn.getAttribute('data-toggle-panel'), false); return; }
+      var showBtn = e.target.closest('[data-show-panel]');
+      if (showBtn) { setPanel(showBtn.getAttribute('data-show-panel'), true); return; }
       var docBtn = e.target.closest('[data-open-doc]');
       if (docBtn) { openReader(docBtn.getAttribute('data-open-doc')); }
     });
@@ -1132,6 +1181,7 @@
         updateHighlights();
         renderPanel();
         renderStoriesPanel();
+        renderDocsPanel();
         updateHints();
         S.setSeenPieces(state.pieces.map(function (p) { return p.id; }));
       });

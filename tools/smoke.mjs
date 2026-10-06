@@ -35,6 +35,7 @@ ok(Array.isArray(index.stories) && index.stories.length > 0, 'data/index.json co
 ok(typeof index.totalPieces === 'number' && index.totalPieces > 0, 'data/index.json con totalPieces');
 const exploreHtml = read('explorar/index.html');
 ok(exploreHtml.includes('data-sp-list'), 'explorar tiene el panel de historias');
+ok(exploreHtml.includes('data-dp-list'), 'explorar tiene el panel de documentos');
 ok(exploreHtml.includes('data-tl-svg'), 'explorar tiene la línea de tiempo');
 
 // historias publicadas: página, datos, recursos
