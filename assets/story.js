@@ -76,7 +76,7 @@
       var c = document.createElementNS(NS, 'circle');
       c.setAttribute('cx', g.x); c.setAttribute('cy', g.y);
       c.setAttribute('r', 6 / k);
-      c.setAttribute('class', 'place-dot story-dot');
+      c.setAttribute('class', 'place-dot');
       svg.appendChild(c);
       var label = document.createElementNS(NS, 'text');
       label.setAttribute('x', g.x + 10 / k); label.setAttribute('y', g.y + 4 / k);
@@ -182,9 +182,7 @@
       var meta = li.querySelector('[data-doc-meta]');
       if (!doc || !meta) return;
       if (state === 'read') {
-        var places = doc.places.map(function (pid) { return names[pid] || pid; }).join(', ');
-        var span = doc.yearEnd != null ? S.fmtSpan(doc.year, doc.yearEnd) : S.fmtYear(doc.year);
-        meta.textContent = places + ' · ' + span;
+        meta.textContent = S.docMetaText(doc, names);
         meta.hidden = false;
       } else {
         meta.hidden = true;
@@ -204,22 +202,14 @@
     if (state === 'read' && rewards) {
       rewards.hidden = false;
       S.loadUnlockedData().then(function (dataFiles) {
-        buildMinimap(el('[data-minimap]') || rewards.querySelector('[data-minimap]'), dataFiles);
-        buildMinitimeline(el('[data-minitimeline]') || rewards.querySelector('[data-minitimeline]'), dataFiles.filter(function (d) { return d.id === PAGE.id; })[0]);
+        buildMinimap(el('[data-minimap]'), dataFiles);
+        buildMinitimeline(el('[data-minitimeline]'), dataFiles.filter(function (d) { return d.id === PAGE.id; })[0]);
       }).catch(function (err) {
         rewards.querySelector('h2').textContent = 'No se pudo cargar el mapa revelado';
       });
     } else if (rewards) {
       rewards.hidden = true;
     }
-  }
-
-  function revealMessage(data) {
-    var parts = [];
-    parts.push(S.plural(data.pieces.length, 'pieza nueva del mapa', 'piezas nuevas del mapa'));
-    parts.push(S.plural(data.places.length, 'lugar', 'lugares'));
-    parts.push(S.plural(data.documents.length, 'documento', 'documentos'));
-    return parts.join(' · ');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -232,7 +222,7 @@
       var id = btn.getAttribute('data-id');
       S.markRead(id);
       S.fetchStoryData(id).then(function (data) {
-        S.toast('Historia marcada como leída: ' + revealMessage(data) + '.');
+        S.toast('Historia marcada como leída: ' + S.revealMessage(data) + '.');
       }).catch(function () {
         S.toast('Historia marcada como leída.');
       });

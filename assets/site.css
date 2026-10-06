@@ -82,7 +82,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   justify-content: center;
 }
 .icon-btn:hover { color: var(--text); border-color: var(--text-dim); }
-.icon-btn.small { width: 26px; height: 26px; font-size: 13px; }
 
 /* -- portada ---------------------------------------------------------------------- */
 
@@ -220,7 +219,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .reward-hint { color: var(--text-dim); font-size: 14px; }
 
 .place-dot { fill: var(--accent); stroke: #101820; stroke-width: 1.5; }
-.place-dot.story-dot { fill: var(--accent); }
 .place-label { fill: var(--text); font-family: var(--font-sans); paint-order: stroke; stroke: rgba(10, 20, 29, 0.85); stroke-width: 3px; }
 .region-circle { fill: rgba(226, 148, 107, 0.04); stroke: var(--text-dim); }
 .region-circle.faint { fill: transparent; }
@@ -525,7 +523,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   .stories-panel { border-right: 0; border-bottom: 1px solid var(--line); max-height: 34vh; }
   .docs-panel { border-left: 0; border-top: 1px solid var(--line); max-height: 30vh; }
   .panel-tab { display: none; }
-  .sp-body { overflow-y: auto; }
   .sp-summary { display: none; }
   .map-view { position: relative; height: 48vh; }
   .map-viewport { position: absolute; }

@@ -74,13 +74,6 @@
     return null;
   }
 
-  function readCount() {
-    var read = getRead();
-    var known = {};
-    index().stories.forEach(function (s) { known[s.id] = 1; });
-    return Object.keys(read).filter(function (id) { return known[id]; }).length;
-  }
-
   // -- utilidades -------------------------------------------------------------
 
   function esc(s) {
@@ -103,6 +96,18 @@
   }
 
   function plural(n, one, many) { return n === 1 ? ('1 ' + one) : (n + ' ' + many); }
+
+  function revealMessage(rec) {
+    return plural(rec.pieces.length, 'pieza nueva del mapa', 'piezas nuevas del mapa') + ' · ' +
+      plural(rec.places.length, 'lugar', 'lugares') + ' · ' +
+      plural(rec.documents.length, 'documento', 'documentos');
+  }
+
+  function docMetaText(d, names) {
+    var places = d.places.map(function (pid) { return names[pid] || pid; }).join(', ');
+    var span = d.yearEnd != null ? fmtSpan(d.year, d.yearEnd) : fmtYear(d.year);
+    return places + ' · ' + span;
+  }
 
   // -- datos (carga perezosa) --------------------------------------------------
 
@@ -185,12 +190,12 @@
     storyStates: storyStates,
     openStoryId: openStoryId,
     bySeq: bySeq,
-    readCount: readCount,
     esc: esc,
     storyColor: storyColor,
     fmtYear: fmtYear,
     fmtSpan: fmtSpan,
-    plural: plural,
+    revealMessage: revealMessage,
+    docMetaText: docMetaText,
     fetchIndexData: fetchIndexData,
     fetchStoryData: fetchStoryData,
     loadUnlockedData: loadUnlockedData,

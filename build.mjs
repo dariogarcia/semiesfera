@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { splitFrontmatter, renderMarkdown, escapeHtml, parseYaml } from './tools/lib.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
 const ASSETS = path.join(ROOT, 'assets');
 const OUT = path.join(ROOT, 'public');
@@ -222,16 +222,11 @@ const indexData = {
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
     summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
-    // metadatos de los documentos: el panel de documentos los lista todos,
-    // sin cargar los datos de cada historia
-    documents: records.get(s.id).documents.map((d) => ({
-      id: d.id, order: d.order, label: d.label, places: d.places,
-      year: d.year, yearEnd: d.yearEnd, story: d.story,
-      storyTitle: d.storyTitle, sequence: d.sequence
-    }))
+    // lo mínimo de cada documento para validar y abrir enlaces ?doc=
+    // de historias abiertas sin cargar antes sus datos
+    documents: records.get(s.id).documents.map((d) => ({ id: d.id, story: d.story }))
   }))
 };
-const miniIndex = indexData;
 
 // ---------------------------------------------------------------------------
 // Plantillas
@@ -249,7 +244,7 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true }
 <link rel="stylesheet" href="${p}assets/site.css">
 <link rel="alternate" type="application/rss+xml" title="Semiesfera" href="${p}rss.xml">
 <script>document.documentElement.classList.add('js');</script>
-<script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(miniIndex)};` : ''}</script>
+<script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
 </head>
 <body>
 ${main}
@@ -291,7 +286,7 @@ function landingMain() {
 
 function storyMain(s, rec) {
   const docs = rec.documents.map((d) => `
-      <li class="doc" data-doc="${d.order}" data-doc-id="${d.id}">
+      <li class="doc" data-doc-id="${d.id}">
         <figure>
           <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
           <figcaption>
@@ -303,14 +298,9 @@ function storyMain(s, rec) {
 
   const pageData = {
     id: s.id,
-    title: s.title,
-    volume: s.volume,
-    sequence: s.sequence,
-    reveals: s.reveals,
-    pieceCount: s.reveals.length,
     placeNames: Object.fromEntries(rec.places.map((p) => [p.id, p.name])),
     docs: rec.documents.map((d) => ({
-      n: d.order, id: d.id, label: d.label, places: d.places, year: d.year, yearEnd: d.yearEnd
+      id: d.id, places: d.places, year: d.year, yearEnd: d.yearEnd
     }))
   };
 

@@ -54,7 +54,7 @@
   function findDocAnywhere(id) {
     var d = findDoc(id);
     if (d) return d;
-    var recs = state.readerRecs || {};
+    var recs = state.readerRecs;
     for (var k in recs) {
       var list = recs[k].documents || [];
       for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
@@ -165,7 +165,7 @@
     var k = view.k;
     placeEls.forEach(function (g) {
       g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 6 / k); });
-      g.querySelectorAll('.place-label').forEach(function (t) { t.setAttribute('font-size', 13 / k); t.setAttribute('x', parseFloat(t.getAttribute('x'))); });
+      g.querySelectorAll('.place-label').forEach(function (t) { t.setAttribute('font-size', 13 / k); });
       g.querySelectorAll('.region-circle').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
       g.querySelectorAll('.region-label').forEach(function (t) { t.setAttribute('font-size', 15 / k); });
     });
@@ -695,7 +695,7 @@
 
   function storyDocsOf(doc) {
     var list = state.docs.filter(function (d) { return d.story === doc.story; });
-    if (!list.length && state.readerRecs && state.readerRecs[doc.story]) {
+    if (!list.length && state.readerRecs[doc.story]) {
       list = (state.readerRecs[doc.story].documents || []).slice();
     }
     return list.sort(function (a, b) { return a.order - b.order; });
@@ -712,7 +712,6 @@
         return;
       }
       S.fetchStoryData(meta.story).then(function (rec) {
-        state.readerRecs = state.readerRecs || {};
         state.readerRecs[meta.story] = rec;
         openReader(docId);
       }).catch(function (err) {
@@ -815,7 +814,7 @@
     var placeId = params.get('place');
     var from = parseInt(params.get('from'), 10);
     var to = parseInt(params.get('to'), 10);
-    if (Number.isFinite(from) && Number.isFinite(to) && params.get('from') != null) {
+    if (Number.isFinite(from) && Number.isFinite(to)) {
       state.range = { from: Math.min(from, to), to: Math.max(from, to) };
     }
     if (docId != null) {
@@ -831,17 +830,15 @@
 
   // -- panel de historias ---------------------------------------------------------------
 
-  function storyMeta(id) {
-    return S.bySeq().filter(function (s) { return s.id === id; })[0] || null;
-  }
-
   function renderStoriesPanel() {
     var states = S.storyStates();
     var read = S.getRead();
     var html = '';
+    var n = 0;
     S.bySeq().forEach(function (s) {
       var st = states[s.id];
       if (st === 'locked') return; // solo lo desbloqueado: el resto espera su turno
+      if (read[s.id]) n++;
       if (st === 'open') {
         html += '<li class="sp-entry open" data-id="' + S.esc(s.id) + '">' +
           '<div class="sp-entry-head"><span class="sp-seq">' + s.sequence + '</span>' +
@@ -865,11 +862,18 @@
     });
     if (!html) html = '<li class="sp-none">No hay historias disponibles todavía.</li>';
     dom.spList.innerHTML = html;
-    var n = Object.keys(read).filter(function (id) { return storyMeta(id); }).length;
     dom.spCount.textContent = n + ' / ' + S.bySeq().length;
   }
 
   // -- panel de documentos (lado derecho) ------------------------------------------------
+
+  function bindDocHover(scope) {
+    scope.querySelectorAll('[data-doc-ref]').forEach(function (b) {
+      var docId = b.getAttribute('data-doc-ref');
+      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
+      b.addEventListener('mouseleave', function () { setPreview(null); });
+    });
+  }
 
   function renderDocsPanel() {
     if (!dom.dpList) return;
@@ -877,7 +881,7 @@
     state.docs.forEach(function (d) {
       var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
       html += '<li class="dp-entry" data-dp-doc="' + S.esc(d.id) + '">' +
-        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
+        '<button type="button" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
         '<span class="dp-year">' + S.esc(span) + '</span>' +
         '<span class="dp-label">' + S.esc(d.label) + '</span>' +
         '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' +
@@ -887,11 +891,7 @@
     dom.dpNone.hidden = state.docs.length > 0;
     var n = state.docs.length;
     dom.dpCount.textContent = n ? n + (n === 1 ? ' documento' : ' documentos') : '';
-    dom.dpList.querySelectorAll('[data-doc-ref]').forEach(function (b) {
-      var docId = b.getAttribute('data-doc-ref');
-      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
-      b.addEventListener('mouseleave', function () { setPreview(null); });
-    });
+    bindDocHover(dom.dpList);
     updateDocsPanelHighlight();
   }
 
@@ -918,7 +918,7 @@
     if (!dom.exploreEl) return;
     dom.exploreEl.classList.toggle('stories-hidden', !state.panels.stories);
     dom.exploreEl.classList.toggle('docs-hidden', !state.panels.docs);
-    dom.panelTabs.forEach(function (t) {
+    document.querySelectorAll('[data-show-panel]').forEach(function (t) {
       var name = t.getAttribute('data-show-panel');
       t.hidden = !!state.panels[name];
     });
@@ -932,26 +932,14 @@
 
   // -- lector de historia ----------------------------------------------------------------
 
-  function revealMessage(rec) {
-    return S.plural(rec.pieces.length, 'pieza nueva del mapa', 'piezas nuevas del mapa') + ' · ' +
-      S.plural(rec.places.length, 'lugar', 'lugares') + ' · ' +
-      S.plural(rec.documents.length, 'documento', 'documentos');
-  }
-
-  function docMetaText(d, names) {
-    var places = d.places.map(function (pid) { return names[pid] || pid; }).join(', ');
-    var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-    return places + ' · ' + span;
-  }
-
   function storyReaderHTML(rec, isRead) {
     var names = {};
     rec.places.forEach(function (p) { names[p.id] = p.name; });
     var docs = rec.documents.map(function (d) {
-      return '<li><button type="button" class="doc-ref" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '">' +
+      return '<li><button type="button" class="doc-ref" data-doc-ref="' + S.esc(d.id) + '">' +
         '<img src="' + S.u(d.image) + '" alt="' + S.esc(d.alt) + '" loading="lazy">' +
         '<span class="doc-ref-info"><span class="doc-ref-label">' + S.esc(d.label) + '</span>' +
-        (isRead ? '<span class="doc-ref-meta">' + S.esc(docMetaText(d, names)) + '</span>' : '') +
+        (isRead ? '<span class="doc-ref-meta">' + S.esc(S.docMetaText(d, names)) + '</span>' : '') +
         '</span></button></li>';
     }).join('');
 
@@ -959,7 +947,7 @@
     if (!isRead) {
       foot = '<button type="button" class="btn primary" data-mark-read data-id="' + S.esc(rec.id) + '">Marcar como leída</button>';
     } else {
-      foot = '<p class="sp-revealed">Has revelado: ' + S.esc(revealMessage(rec)) + '.</p>' +
+      foot = '<p class="sp-revealed">Has revelado: ' + S.esc(S.revealMessage(rec)) + '.</p>' +
         '<p class="sheet-foot-hint">Cierra el lector y vuelve al mapa para seguir explorando.</p>';
     }
 
@@ -992,17 +980,12 @@
     dom.storyReader.scrollTop = 0;
     var sheet = dom.storyReader.querySelector('[data-story-sheet]');
     if (sheet) sheet.scrollTop = 0;
-    dom.storyReader.querySelectorAll('[data-doc-ref]').forEach(function (b) {
-      var docId = b.getAttribute('data-doc-ref');
-      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
-      b.addEventListener('mouseleave', function () { setPreview(null); });
-    });
+    bindDocHover(dom.storyReader);
   }
 
   function openStoryReader(id) {
     S.fetchStoryData(id).then(function (rec) {
       state.readerStory = id;
-      state.readerRecs = state.readerRecs || {};
       state.readerRecs[id] = rec;
       if (!dom.storyReader) {
         dom.storyReader = document.createElement('div');
@@ -1061,7 +1044,7 @@
       renderStoriesPanel();
       renderDocsPanel();
       if (state.readerStory === id) fillStoryReader(rec);
-      S.toast('Historia marcada como leída: ' + revealMessage(rec) + '.');
+      S.toast('Historia marcada como leída: ' + S.revealMessage(rec) + '.');
     }).catch(function () {
       renderStoriesPanel();
       renderDocsPanel();
@@ -1093,7 +1076,6 @@
     dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
     dom.dpNone = document.querySelector('[data-dp-none]');
-    dom.panelTabs = Array.prototype.slice.call(document.querySelectorAll('[data-show-panel]'));
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -1112,8 +1094,8 @@
       if (hideBtn) { setPanel(hideBtn.getAttribute('data-toggle-panel'), false); return; }
       var showBtn = e.target.closest('[data-show-panel]');
       if (showBtn) { setPanel(showBtn.getAttribute('data-show-panel'), true); return; }
-      var docBtn = e.target.closest('[data-open-doc]');
-      if (docBtn) { openReader(docBtn.getAttribute('data-open-doc')); }
+      var docBtn = e.target.closest('[data-doc-ref]');
+      if (docBtn) { openReader(docBtn.getAttribute('data-doc-ref')); }
     });
 
     document.addEventListener('keydown', function (e) {
@@ -1134,18 +1116,13 @@
       return S.loadUnlockedData().then(function (files) {
         state.files = files;
         rebuildState();
-        buildMap();
         initMapEvents();
-        initDomain();
         initTimelineEvents();
-        renderTimeline();
-        fitMap();
+        refreshWorld();
         applyUrl();
         updateHighlights();
         renderStoriesPanel();
         renderDocsPanel();
-        updateHints();
-        S.setSeenPieces(state.pieces.map(function (p) { return p.id; }));
       });
     }).catch(function (err) {
       S.toast('No se pudieron cargar los datos: ' + err.message);

@@ -108,8 +108,7 @@ function checkLinks(file) {
   const refs = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1])
     .filter((h) => !h.startsWith('http') && !h.startsWith('#') && !h.startsWith('mailto:') && !h.startsWith('data:'));
   for (const ref of refs) {
-    let target = path.join(PUBLIC, path.dirname(file), ref);
-    try { target = path.resolve(PUBLIC, path.dirname(path.join(PUBLIC, file)), ref); } catch (e) { /* ruta relativa */ }
+    const target = path.resolve(PUBLIC, path.dirname(path.join(PUBLIC, file)), ref);
     let okPath = fs.existsSync(target) && fs.statSync(target).isFile();
     if (!okPath && fs.existsSync(target) && fs.statSync(target).isDirectory()) okPath = fs.existsSync(path.join(target, 'index.html'));
     ok(okPath, `enlace válido en ${file}: ${ref}`);
