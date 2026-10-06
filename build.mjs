@@ -389,9 +389,9 @@ const exploreMain = `<main class="explore" data-explore>
   </aside>
   <aside class="docs-panel" aria-label="Documentos">
     <div class="dp-head">
-      <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
       <h2>Documentos</h2>
       <span class="dp-count" data-dp-count></span>
+      <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
     </div>
     <div class="dp-body">
       <ol class="dp-list" data-dp-list></ol>
