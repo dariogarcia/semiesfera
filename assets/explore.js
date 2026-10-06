@@ -208,7 +208,14 @@
     });
     dom.world.appendChild(svg);
 
-    state.places.forEach(function (place) {
+    // las regiones se dibujan primero: su círculo con relleno debe quedar
+    // por debajo de los puntos que contiene, o el cursor sobre un punto
+    // (p. ej. deishe dentro de markland) lo capturaría la región
+    var placeList = Array.from(state.places.values());
+    placeList.sort(function (a, b) {
+      return (a.geometry.type === 'circle' ? 0 : 1) - (b.geometry.type === 'circle' ? 0 : 1);
+    });
+    placeList.forEach(function (place) {
       var count = docsAtPlace(place.id).length;
       if (!count) return;
       var g = svgEl('g', {
