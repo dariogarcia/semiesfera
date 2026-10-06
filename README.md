@@ -27,11 +27,10 @@ y la abierta); el resto aparece al marcar la anterior como leída. El lector de
 historias se abre sobre el mapa: cuerpo en markdown, documentos enlazados con
 el mapa y la línea de tiempo, y el botón **Marcar como leída** al pie.
 
-El panel de documentos (derecha) lista **todos los documentos publicados** en
-orden cronológico, sin filtrar: al pasar el cursor por un lugar del mapa o un
-punto de la línea de tiempo, las entradas correspondientes se resaltan y se
-centran en el panel. Los documentos de historias aún bloqueadas aparecen
-atenuados y sin acción.
+El panel de documentos (derecha) lista, en orden cronológico, los documentos
+de las historias ya leídas: crece a medida que se lee. Al pasar el cursor por
+un lugar del mapa o un punto de la línea de tiempo, las entradas
+correspondientes se resaltan y se centran en el panel.
 
 Las páginas de historia son HTML estático puro (indexables, RSS, sin scripts).
 Solo el progreso y `/explorar` necesitan JavaScript.

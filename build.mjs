@@ -402,6 +402,7 @@ const exploreMain = `<main class="explore" data-explore>
     </div>
     <div class="dp-body" data-dp-body>
       <ol class="dp-list" data-dp-list></ol>
+      <p class="dp-none" data-dp-none>Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.</p>
     </div>
   </aside>
   <button class="panel-tab left" type="button" data-show-panel="stories" hidden>Historias</button>

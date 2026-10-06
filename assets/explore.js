@@ -873,20 +873,19 @@
 
   function renderDocsPanel() {
     if (!dom.dpList) return;
-    var states = S.storyStates();
     var html = '';
-    state.allDocs.forEach(function (d) {
+    state.docs.forEach(function (d) {
       var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-      var locked = states[d.story] === 'locked';
-      html += '<li class="dp-entry' + (locked ? ' locked' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
-        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '"' + (locked ? ' disabled' : '') + '>' +
+      html += '<li class="dp-entry" data-dp-doc="' + S.esc(d.id) + '">' +
+        '<button type="button" data-open-doc="' + S.esc(d.id) + '" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
         '<span class="dp-year">' + S.esc(span) + '</span>' +
         '<span class="dp-label">' + S.esc(d.label) + '</span>' +
         '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' +
         '</button></li>';
     });
     dom.dpList.innerHTML = html;
-    var n = state.allDocs.length;
+    dom.dpNone.hidden = state.docs.length > 0;
+    var n = state.docs.length;
     dom.dpCount.textContent = n ? n + (n === 1 ? ' documento' : ' documentos') : '';
     dom.dpList.querySelectorAll('[data-doc-ref]').forEach(function (b) {
       var docId = b.getAttribute('data-doc-ref');
@@ -1093,6 +1092,7 @@
     dom.dpList = document.querySelector('[data-dp-list]');
     dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
+    dom.dpNone = document.querySelector('[data-dp-none]');
     dom.panelTabs = Array.prototype.slice.call(document.querySelectorAll('[data-show-panel]'));
   }
 
