@@ -75,6 +75,9 @@ Requiere Node >= 18. Sin dependencias npm.
 
 ## Flujo de autoría
 
+Guía detallada paso a paso (incluido cómo preparar mapas desde un JPG grande
+y cómo convertir los doc-boxes de Pandoc/LaTeX en documentos web):
+[docs/anadir-historias.md](docs/anadir-historias.md). Resumen:
 1. Recorta las piezas nuevas del mapa y lístalas en `map-pieces.json`. Coloca
    el mapa completo en `content/complete/` si existe.
 2. Añade los lugares nuevos a `places.json` y, si hace falta, una era a
