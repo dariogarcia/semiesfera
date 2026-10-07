@@ -57,7 +57,7 @@ content/            el mundo, editado a mano
   pieces/           imágenes de las piezas (SVG recortados)
   stories/<id>/     story.md (frontmatter + cuerpo), cover.svg, story.pdf, docs/
 assets/             CSS y JS del cliente (se copian al construir)
-tools/              generador de recursos de ejemplo, servidor dev, smoke test
+tools/              importador de historias, servidor dev, smoke test
 build.mjs           generador del sitio (Node, sin dependencias)
 public/             salida del build (ignorada por git)
 ```
@@ -65,7 +65,6 @@ public/             salida del build (ignorada por git)
 ## Desarrollo
 
 ```sh
-npm run assets   # regenera las imágenes y PDFs de ejemplo (opcional)
 npm run build    # construye public/
 npm run serve    # sirve public/ en http://localhost:8178
 npm test         # build + smoke test

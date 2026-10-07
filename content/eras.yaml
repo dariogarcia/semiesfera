@@ -8,3 +8,6 @@ eras:
   - name: Después del túnel
     from: 0
     to: 100
+  - name: La era de los landes
+    from: 100
+    to: 1000

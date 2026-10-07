@@ -5,7 +5,6 @@
   "type": "module",
   "description": "Sitio de historias cuyo mapa y línea de tiempo se revelan al leer",
   "scripts": {
-    "assets": "node tools/make-assets.mjs",
     "build": "node build.mjs",
     "serve": "node tools/serve.mjs",
     "test": "node build.mjs && node tools/smoke.mjs"

@@ -1,14 +1,8 @@
 {
   "places": [
-    { "id": "markland", "name": "Marca", "geometry": { "type": "circle", "x": 390, "y": 340, "radius": 120 } },
-    { "id": "deishe", "name": "Deishe", "parent": "markland", "geometry": { "type": "point", "x": 400, "y": 300 } },
-    { "id": "tunnel-gate", "name": "La Puerta del Túnel", "parent": "markland", "geometry": { "type": "point", "x": 436, "y": 372 } },
-    { "id": "old-harbor", "name": "Puerto Viejo", "parent": "markland", "geometry": { "type": "point", "x": 322, "y": 398 } },
-    { "id": "sarn", "name": "Reino de Sarn", "geometry": { "type": "circle", "x": 810, "y": 500, "radius": 130 } },
-    { "id": "sarn-city", "name": "Sarn", "parent": "sarn", "geometry": { "type": "point", "x": 790, "y": 490 } },
-    { "id": "northreach", "name": "Alcance del Norte", "geometry": { "type": "circle", "x": 900, "y": 200, "radius": 110 } },
-    { "id": "thane", "name": "Thane", "parent": "northreach", "geometry": { "type": "point", "x": 886, "y": 186 } },
-    { "id": "far-east", "name": "Tierras Veladas", "geometry": { "type": "circle", "x": 210, "y": 640, "radius": 70 } },
-    { "id": "veiled-port", "name": "Puerto Velado", "parent": "far-east", "geometry": { "type": "point", "x": 196, "y": 628 } }
+    { "id": "taaku", "name": "Taaku", "geometry": { "type": "circle", "x": 260, "y": 100, "radius": 75 } },
+    { "id": "deishe", "name": "Deishe", "parent": "taaku", "geometry": { "type": "point", "x": 235, "y": 125 } },
+    { "id": "kalts-een", "name": "Kalts'een", "parent": "taaku", "geometry": { "type": "point", "x": 300, "y": 130 } },
+    { "id": "etaan", "name": "Etaan", "parent": "taaku", "geometry": { "type": "point", "x": 215, "y": 80 } }
   ]
 }

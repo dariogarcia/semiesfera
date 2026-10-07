@@ -7,3 +7,6 @@ Thumbs.db
 
 # Editor
 *.swp
+
+# Renders intermedios de tools/import-story.mjs
+renders/

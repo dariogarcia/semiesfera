@@ -218,7 +218,7 @@ const records = new Map(published.map((s) => [s.id, storyRecord(s)]));
 const indexData = {
   mapSize: mapData.size,
   totalPieces: publishedPieces.size,
-  complete: { file: 'complete/map.svg', width: mapData.size.width, height: mapData.size.height },
+  complete: { file: mapData.complete.file, width: mapData.size.width, height: mapData.size.height },
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
     summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
