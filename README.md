@@ -81,8 +81,10 @@ y cómo convertir los doc-boxes de Pandoc/LaTeX en documentos web):
    el mapa completo en `content/complete/` si existe.
 2. Añade los lugares nuevos a `places.json` y, si hace falta, una era a
    `eras.yaml`.
-3. Crea la carpeta de la historia con sus imágenes y `story.md`, con su
-   `sequence` (el siguiente número libre) y sus `reveals`.
+3. Importa la historia desde tu Markdown de Pandoc con
+   `node tools/import-story.mjs content/sources/mi-historia.md --id mi-historia …`
+   (genera `story.md`, `story.pdf`, `cover.svg` y los `docs/dN.png`; ajusta a
+   mano lo que quieras después), o créala a mano.
 4. Pon la fecha `publish` y haz push. Un workflow diario reconstruye y libera
    la historia en su fecha. Las comprobaciones del build frenan los errores
    antes de publicar.

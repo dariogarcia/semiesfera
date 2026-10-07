@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420">
+<rect width="300" height="420" fill="#141f2b"/>
+<rect x="10" y="10" width="280" height="400" fill="none" stroke="#e2946b" stroke-width="1.5" opacity="0.7"/>
+<path d="M 40 190 L 95 105 L 130 160 L 165 95 L 210 175 L 245 125 L 270 190 Z" fill="#e2946b" stroke="#e2946b" stroke-width="1.5" opacity="0.85"/>
+<path d="M 40 190 L 270 190 L 270 205 L 40 205 Z" fill="#e2946b" opacity="0.35"/>
+<text x="150" y="288" text-anchor="middle" font-family="Georgia, serif" font-size="21" fill="#e8e0cf">LA LEYENDA DEL</text><text x="150" y="312" text-anchor="middle" font-family="Georgia, serif" font-size="21" fill="#e8e0cf">PRIMER INTERLANDE</text>
+<text x="150" y="345" text-anchor="middle" font-family="Georgia, serif" font-size="11" letter-spacing="2" fill="#e2946b">HISTORIAS CON HISTORIA —</text><text x="150" y="360" text-anchor="middle" font-family="Georgia, serif" font-size="11" letter-spacing="2" fill="#e2946b">VOLUMEN 11</text>
+<text x="26" y="40" font-family="Georgia, serif" font-size="30" fill="#e2946b" opacity="0.85">1</text>
+</svg>
