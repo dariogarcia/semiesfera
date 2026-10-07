@@ -267,6 +267,7 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   pointer-events: none;
   padding: 20px;
 }
+.map-hint[hidden] { display: none; }
 .map-hint h2 { font-size: 26px; margin: 0; color: var(--text-dim); }
 .map-hint p { margin: 0; color: var(--text-dim); opacity: 0.8; max-width: 380px; }
 
