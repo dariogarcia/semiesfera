@@ -182,6 +182,11 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .story-body h2, .story-body h3 { margin-top: 1.6em; }
 
 .story-docs { margin-top: 40px; }
+/* documentos dentro del texto (lectores de historia y hoja del explorador) */
+.story-body .doc, .story-sheet-body .doc { margin: 30px 0; }
+.story-body .doc img, .story-sheet-body .doc img {
+  max-height: 85vh; object-fit: contain; object-position: top center;
+}
 .doc-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
 .doc figure { margin: 0; }
 .doc img {
@@ -461,16 +466,10 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 
 .story-sheet-body { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 22px; }
 
-.story-sheet-docs { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 18px; }
-.story-sheet-docs h3 { margin: 0 0 4px; font-size: 20px; }
-.docs-hint { color: var(--text-dim); font-size: 13px; margin: 0 0 12px; }
-.sheet-doc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-
 .doc-ref {
-  display: flex; gap: 10px; align-items: center;
-  background: var(--bg-soft); border: 1px solid var(--line); border-radius: 8px;
-  padding: 8px; cursor: pointer; width: 100%; text-align: left; color: var(--text);
-  font-family: var(--font-sans);
+  display: flex; gap: 10px; align-items: center; text-align: left;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; cursor: pointer; width: 100%; color: var(--text);
 }
 .doc-ref:hover { border-color: var(--accent); }
 .doc-ref img { width: 52px; height: 66px; object-fit: cover; border-radius: 5px; background: #d8c8a2; display: block; flex: none; }

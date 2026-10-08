@@ -201,6 +201,13 @@ function storyRecord(s) {
     sequence: s.sequence
   }));
   const years = s.documents.flatMap((d) => [d.year, d.yearEnd ?? d.year]);
+  // documentos en su sitio del texto; el src del <img> lo resuelve el cliente
+  // (data-doc-src, relativo a la raíz del sitio)
+  const bodyHtml = renderMarkdown(s.body).replace(/<p>\{\{d(\d+)\}\}<\/p>/g, (_, n) => {
+    const d = docs.find((x) => x.order === Number(n));
+    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{d${n}}} pero solo hay ${docs.length} documentos`);
+    return `<figure class="doc" data-doc-id="${d.id}" data-doc-src="${d.image}"><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span></figcaption></figure>`;
+  });
   const storyEras = eras.filter((era) =>
     s.documents.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
   );
@@ -212,7 +219,7 @@ function storyRecord(s) {
     summary: s.summary,
     cover: `stories/${s.id}/${s.cover}`,
     pdf: `stories/${s.id}/${s.pdf}`,
-    bodyHtml: renderMarkdown(s.body),
+    bodyHtml,
     reveals: s.reveals,
     pieces: s.reveals.map((pid) => {
       const p = pieceById.get(pid);
@@ -299,16 +306,32 @@ function landingMain() {
 // --- página de historia -----------------------------------------------------
 
 function storyMain(s, rec) {
-  const docs = rec.documents.map((d) => `
-      <li class="doc" data-doc-id="${d.id}">
-        <figure>
-          <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
-          <figcaption>
-            <span class="doc-label">${escapeHtml(d.label)}</span>
-            <span class="doc-meta" data-doc-meta hidden></span>
-          </figcaption>
-        </figure>
-      </li>`).join('\n');
+  const docFigure = (d) => `<figure class="doc" data-doc-id="${d.id}">
+        <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
+        <figcaption>
+          <span class="doc-label">${escapeHtml(d.label)}</span>
+          <span class="doc-meta" data-doc-meta hidden></span>
+        </figcaption>
+      </figure>`;
+
+  // los documentos se muestran donde estaban en el texto (marcadores {{dN}});
+  // los que no tengan marcador quedan en la lista final
+  const placed = new Set();
+  let bodyHtml = renderMarkdown(s.body);
+  bodyHtml = bodyHtml.replace(/<p>\{\{d(\d+)\}\}<\/p>/g, (_, n) => {
+    const d = rec.documents.find((x) => x.order === Number(n));
+    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{d${n}}} pero solo hay ${rec.documents.length} documentos`);
+    placed.add(d.id);
+    return docFigure(d);
+  });
+  const leftovers = rec.documents.filter((d) => !placed.has(d.id));
+  const docsSection = leftovers.length ? `
+    <section class="story-docs">
+      <h2>Documentos</h2>
+      <ol class="doc-list">
+${leftovers.map(docFigure).join('\n')}
+      </ol>
+    </section>` : '';
 
   const pageData = {
     id: s.id,
@@ -340,14 +363,8 @@ function storyMain(s, rec) {
       </div>
     </header>
     <div class="story-body markdown">
-${renderMarkdown(s.body)}
-    </div>
-    <section class="story-docs">
-      <h2>Documentos</h2>
-      <ol class="doc-list">
-${docs}
-      </ol>
-    </section>
+${bodyHtml}
+    </div>${docsSection}
     <section class="story-rewards" data-rewards hidden>
       <h2>Lo que revela esta historia</h2>
       <div class="minimap-frame"><div class="minimap-world" data-minimap></div></div>

@@ -476,11 +476,20 @@ function main() {
   const segments = splitDocBoxes(src.body);
   const docSegs = segments.filter((s) => s.type === 'doc');
   if (!docSegs.length) throw new Error('La fuente no contiene doc-boxes (::: {.doc-box})');
-  const narrative = segments
-    .filter((s) => s.type === 'narrative')
-    .map((s) => cleanNarrative(s.content))
-    .filter(Boolean)
-    .join('\n\n');
+  // narrativa con marcadores {{dN}} donde estaba cada doc-box
+  // (el build los sustituye por la figura del documento, en su sitio)
+  let docN = 0;
+  const parts = [];
+  for (const seg of segments) {
+    if (seg.type === 'doc') {
+      docN++;
+      parts.push(`{{d${docN}}}`);
+    } else {
+      const t = cleanNarrative(seg.content);
+      if (t) parts.push(t);
+    }
+  }
+  const narrative = parts.join('\n\n');
 
   const titleBlock = extractBlockScalar(src.fmLines, 'title');
   const title = args.title || (titleBlock ? titleBlock.split('\n').find((l) => l.trim() && l.trim() !== '-')?.replace(/\\$/, '').trim() : null) || 'Historia sin título';

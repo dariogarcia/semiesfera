@@ -206,6 +206,13 @@ un documento** en `story.md`. Los datos salen de tu propio `\docmeta`:
   vivir en varios lugares.
 - `alt`: una frase que describa el documento (accesibilidad).
 
+**Posición en el texto**: cada documento se muestra donde estaba su doc-box
+en el original. El importador deja un marcador `{{dN}}` en el cuerpo de
+`story.md` (d1, d2… en orden de aparición) y el build lo sustituye por la
+figura del documento. Al escribir `story.md` a mano, coloca los marcadores
+donde toque; un documento sin marcador cae en la lista «Documentos» al
+final de la página.
+
 ### 3.5 Renderiza la imagen de cada documento
 
 Cada documento necesita una imagen (`docs/d1.svg`, `docs/d1.png`…). La forma

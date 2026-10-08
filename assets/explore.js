@@ -950,13 +950,8 @@
   function storyReaderHTML(rec, isRead) {
     var names = {};
     rec.places.forEach(function (p) { names[p.id] = p.name; });
-    var docs = rec.documents.map(function (d) {
-      return '<li><button type="button" class="doc-ref" data-doc-ref="' + S.esc(d.id) + '">' +
-        '<img src="' + S.u(d.image) + '" alt="' + S.esc(d.alt) + '" loading="lazy">' +
-        '<span class="doc-ref-info"><span class="doc-ref-label">' + S.esc(d.label) + '</span>' +
-        (isRead ? '<span class="doc-ref-meta">' + S.esc(S.docMetaText(d, names)) + '</span>' : '') +
-        '</span></button></li>';
-    }).join('');
+    readerNames = names;
+    readerIsRead = isRead;
 
     var foot;
     if (!isRead) {
@@ -980,18 +975,29 @@
       '</div>' +
       '</header>' +
       '<div class="story-sheet-body markdown">' + rec.bodyHtml + '</div>' +
-      '<section class="story-sheet-docs">' +
-      '<h3>Documentos</h3>' +
-      '<p class="docs-hint">' + (isRead ? 'Cada documento enlaza su lugar y su fecha en el mapa y la línea de tiempo.' : 'Los lugares y fechas de los documentos se revelan al marcar la historia como leída.') + '</p>' +
-      '<ol class="sheet-doc-list">' + docs + '</ol>' +
-      '</section>' +
       '<footer class="story-sheet-foot">' + foot + '</footer>' +
       '</article>';
+  }
+
+  var readerNames = {}, readerIsRead = false;
+
+  function hydrateSheetDocs(rec) {
+    dom.storyReader.querySelectorAll('.doc[data-doc-src]').forEach(function (fig) {
+      var img = fig.querySelector('img');
+      if (img) img.src = S.u(fig.getAttribute('data-doc-src'));
+      var meta = fig.querySelector('[data-doc-meta]');
+      var doc = rec.documents.filter(function (d) { return d.id === fig.getAttribute('data-doc-id'); })[0];
+      if (meta && doc && readerIsRead) {
+        meta.hidden = false;
+        meta.textContent = S.docMetaText(doc, readerNames);
+      }
+    });
   }
 
   function fillStoryReader(rec) {
     var isRead = !!S.getRead()[rec.id];
     dom.storyReader.innerHTML = storyReaderHTML(rec, isRead);
+    hydrateSheetDocs(rec);
     dom.storyReader.scrollTop = 0;
     var sheet = dom.storyReader.querySelector('[data-story-sheet]');
     if (sheet) sheet.scrollTop = 0;
