@@ -76,7 +76,9 @@ Requiere Node >= 18. Sin dependencias npm.
 
 Guía detallada paso a paso (incluido cómo preparar mapas desde un JPG grande
 y cómo convertir los doc-boxes de Pandoc/LaTeX en documentos web):
-[docs/anadir-historias.md](docs/anadir-historias.md). Resumen:
+[docs/anadir-historias.md](docs/anadir-historias.md). Para regenerar el mapa
+cuando cambie el mundo del generador (o renombrar landes):
+[docs/actualizar-mapa.md](docs/actualizar-mapa.md). Resumen:
 1. Si el mundo cambió en el generador, regenera el mapa con
    `node tools/build-map.mjs` (piezas por lande, regiones `poly`, mapa
    completo) y recoloca los lugares `point`. Para mundos dibujados a mano,

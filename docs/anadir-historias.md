@@ -143,8 +143,8 @@ Después de regenerar, revisa que cada `story.md` revele piezas existentes
 generador renumerara las culturas, los ids `lande-<c>` cambian y hay que
 actualizar `reveals`, `places` y `parent`.
 
-Opciones: `--geojson ruta`, `--png ruta`, `--calib sx,sy,ox,oy` (afinar la
-calibración), `--margin px` (margen del recorte).
+Guía completa del proceso (renombrar landes, calibración, verificación en
+navegador): [actualizar-mapa.md](actualizar-mapa.md).
 
 ### `content/eras.yaml` — eras de la línea de tiempo
 
