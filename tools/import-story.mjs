@@ -577,9 +577,14 @@ function main() {
 
   // pdf
   let pdfStatus = 'generado';
+  const pdfOut = path.join(storyDir, 'story.pdf');
   if (args.pdf) {
-    fs.copyFileSync(path.resolve(ROOT, args.pdf), path.join(storyDir, 'story.pdf'));
+    fs.copyFileSync(path.resolve(ROOT, args.pdf), pdfOut);
     pdfStatus = `copiado de ${args.pdf}`;
+  } else if (fs.existsSync(pdfOut)) {
+    // no se recompila un PDF ya presente: puede ser una versión afinada a mano
+    // (para reemplazarlo, pasa --pdf ruta/al.pdf o borra el existente)
+    pdfStatus = 'conservado (ya existía)';
   } else {
     const pdfPreamble = buildPreamble(src, { longPage: false });
     const body = cleanForRender(src.body, { keepPages: true });
