@@ -74,16 +74,22 @@ for (const p of piecesMeta.pieces) {
   }
 }
 
-// el mapa completo no incluye regiones no publicadas
-const complete = read('complete/map.svg');
-for (const p of piecesMeta.pieces) {
-  if (revealed.has(p.id)) {
-    const pieceSvg = fs.readFileSync(path.join(CONTENT, p.file), 'utf8');
-    const regions = [...pieceSvg.matchAll(/data-region="([^"]+)"/g)].map((m) => m[1]);
-    regions.forEach((r) => {
-      const m = complete.match(new RegExp(`data-region="${r}"`));
-      ok(!!m, `el mapa completo incluye la región publicada ${r}`);
-    });
+// el mapa completo existe y no incluye piezas no publicadas
+{
+  const completeFile = piecesMeta.complete.file;
+  ok(exists(completeFile), `existe el mapa completo (${completeFile})`);
+  const allPublished = piecesMeta.pieces.every((p) => revealed.has(p.id));
+  if (!allPublished) {
+    const complete = read(completeFile);
+    for (const p of piecesMeta.pieces) {
+      if (revealed.has(p.id)) continue;
+      if (p.file.endsWith('.png')) {
+        const b64 = fs.readFileSync(path.join(CONTENT, p.file)).toString('base64');
+        ok(!complete.includes(b64), `el mapa completo no incluye la pieza no publicada ${p.id}`);
+      } else {
+        ok(!complete.includes(`data-region="${p.regions[0]}"`), `el mapa completo no incluye la pieza no publicada ${p.id}`);
+      }
+    }
   }
 }
 

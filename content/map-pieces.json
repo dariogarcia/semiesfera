@@ -1,7 +1,90 @@
 {
-  "size": { "width": 1200, "height": 800 },
+  "size": {
+    "width": 1920,
+    "height": 638
+  },
   "pieces": [
-    { "id": "p-taaku", "file": "pieces/p-taaku.svg", "x": 120, "y": 20, "width": 280, "height": 170, "regions": ["taaku"] }
+    {
+      "id": "p-lande-14",
+      "file": "pieces/p-lande-14.png",
+      "x": 1026,
+      "y": 87,
+      "width": 464,
+      "height": 414,
+      "regions": [
+        "lande-14"
+      ]
+    },
+    {
+      "id": "p-lande-16",
+      "file": "pieces/p-lande-16.png",
+      "x": 901,
+      "y": 126,
+      "width": 171,
+      "height": 273,
+      "regions": [
+        "lande-16"
+      ]
+    },
+    {
+      "id": "p-lande-17",
+      "file": "pieces/p-lande-17.png",
+      "x": 423,
+      "y": 48,
+      "width": 521,
+      "height": 462,
+      "regions": [
+        "lande-17"
+      ]
+    },
+    {
+      "id": "p-lande-18",
+      "file": "pieces/p-lande-18.png",
+      "x": 0,
+      "y": 57,
+      "width": 1920,
+      "height": 453,
+      "regions": [
+        "lande-18"
+      ]
+    },
+    {
+      "id": "p-lande-19",
+      "file": "pieces/p-lande-19.png",
+      "x": 151,
+      "y": 97,
+      "width": 396,
+      "height": 380,
+      "regions": [
+        "lande-19"
+      ]
+    },
+    {
+      "id": "p-lande-20",
+      "file": "pieces/p-lande-20.png",
+      "x": 0,
+      "y": 26,
+      "width": 1920,
+      "height": 297,
+      "regions": [
+        "lande-20"
+      ]
+    },
+    {
+      "id": "p-lande-21",
+      "file": "pieces/p-lande-21.png",
+      "x": 0,
+      "y": 463,
+      "width": 1920,
+      "height": 173,
+      "regions": [
+        "lande-21"
+      ]
+    }
   ],
-  "complete": { "file": "complete/map.svg", "width": 1200, "height": 800 }
+  "complete": {
+    "file": "complete/map.png",
+    "width": 1920,
+    "height": 638
+  }
 }

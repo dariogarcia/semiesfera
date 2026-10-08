@@ -90,12 +90,15 @@ primero porque `story.md` los referencia:
 ```
 
 - `id`: slug en minúsculas (`a-z0-9-`), único.
-- `geometry.type`: `point` (un punto: ciudades, enclaves) o `circle` (una
-  región: reinos, landes). Las coordenadas `x`/`y` son **píxeles del lienzo del
-  mapa completo** (1200×800 por defecto).
+- `geometry.type`: `point` (un punto: ciudades, enclaves), `circle` (región
+  circular) o `poly` (región irregular: landes). Las coordenadas `x`/`y` (o los
+  contornos de `poly`) son **píxeles del lienzo del mapa completo**.
 - `parent`: opcional. Un punto dentro de una región debe declararla como
   padre: al pasar el cursor por la región se iluminan los documentos de todos
   sus hijos.
+
+Las regiones `poly` las genera `tools/build-map.mjs` (ver abajo); a mano solo
+se colocan los `point`, con su `parent` apuntando al lande correspondiente.
 
 ### `content/map-pieces.json` — piezas del mapa
 
@@ -113,6 +116,35 @@ leída (ver sección 4 para crearlas desde un JPG):
   ignora.
 - `size` (arriba del todo) es el tamaño del lienzo; `complete` apunta al mapa
   completo que se muestra cuando el lector ha revelado todas las piezas.
+
+### Regenerar el mundo desde el generador: `tools/build-map.mjs`
+
+El mapa actual viene de las exportaciones del generador de mundos (celdas
+GeoJSON + render PNG) que viven en `input/map_files/` (fuera del repo). El
+script las convierte en los recursos del sitio:
+
+```sh
+node tools/build-map.mjs
+```
+
+Qué hace:
+
+- Calibra geocoordenadas → píxeles del render (lagos como anclas; se reescala
+  solo si la resolución del PNG cambia).
+- Recorta el lienzo al hemisferio descrito (las zonas con cultura).
+- Una pieza PNG enmascarada por **lande** (= zona de cultura del generador):
+  `content/pieces/p-lande-<c>.png`.
+- `places.json` con las landes como regiones `poly` y `complete/map.png`.
+- **Conserva** los lugares `point` existentes (ciudades de las historias);
+  recolócalos a mano dentro de su lande y ponles su `parent`.
+
+Después de regenerar, revisa que cada `story.md` revele piezas existentes
+(`reveals`) y que sus lugares caigan dentro (el build lo valida). Si el
+generador renumerara las culturas, los ids `lande-<c>` cambian y hay que
+actualizar `reveals`, `places` y `parent`.
+
+Opciones: `--geojson ruta`, `--png ruta`, `--calib sx,sy,ox,oy` (afinar la
+calibración), `--margin px` (margen del recorte).
 
 ### `content/eras.yaml` — eras de la línea de tiempo
 

@@ -50,14 +50,14 @@ Solo el progreso y `/explorar` necesitan JavaScript.
 
 ```
 content/            el mundo, editado a mano
-  places.json       lugares (puntos o círculos, en píxeles del mapa completo)
+  places.json       lugares (puntos, círculos o polígonos, en píxeles del mapa)
   map-pieces.json   piezas del mapa (recortes con posición y tamaño)
   eras.yaml         eras con nombre para la línea de tiempo
-  complete/         (opcional) mapa completo como único archivo
-  pieces/           imágenes de las piezas (SVG recortados)
+  complete/         mapa completo como único archivo
+  pieces/           imágenes de las piezas (PNG enmascarados por lande)
   stories/<id>/     story.md (frontmatter + cuerpo), cover.svg, story.pdf, docs/
 assets/             CSS y JS del cliente (se copian al construir)
-tools/              importador de historias, servidor dev, smoke test
+tools/              importador de historias, generador del mapa, servidor dev, smoke test
 build.mjs           generador del sitio (Node, sin dependencias)
 public/             salida del build (ignorada por git)
 ```
@@ -77,8 +77,10 @@ Requiere Node >= 18. Sin dependencias npm.
 Guía detallada paso a paso (incluido cómo preparar mapas desde un JPG grande
 y cómo convertir los doc-boxes de Pandoc/LaTeX en documentos web):
 [docs/anadir-historias.md](docs/anadir-historias.md). Resumen:
-1. Recorta las piezas nuevas del mapa y lístalas en `map-pieces.json`. Coloca
-   el mapa completo en `content/complete/` si existe.
+1. Si el mundo cambió en el generador, regenera el mapa con
+   `node tools/build-map.mjs` (piezas por lande, regiones `poly`, mapa
+   completo) y recoloca los lugares `point`. Para mundos dibujados a mano,
+   recorta las piezas y lístalas en `map-pieces.json`.
 2. Añade los lugares nuevos a `places.json` y, si hace falta, una era a
    `eras.yaml`.
 3. Importa la historia desde tu Markdown de Pandoc con

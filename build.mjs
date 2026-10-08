@@ -29,9 +29,10 @@ const placeById = new Map();
 for (const p of places) {
   if (!p.id || !p.name) fail(`places.json: lugar sin id o nombre (${JSON.stringify(p)})`);
   else if (placeById.has(p.id)) fail(`places.json: id de lugar duplicado "${p.id}"`);
-  else if (!p.geometry || !['point', 'circle'].includes(p.geometry.type)) fail(`Lugar "${p.id}": la geometría debe ser point o circle`);
-  else if (typeof p.geometry.x !== 'number' || typeof p.geometry.y !== 'number') fail(`Lugar "${p.id}": faltan x/y`);
+  else if (!p.geometry || !['point', 'circle', 'poly'].includes(p.geometry.type)) fail(`Lugar "${p.id}": la geometría debe ser point, circle o poly`);
+  else if (p.geometry.type !== 'poly' && (typeof p.geometry.x !== 'number' || typeof p.geometry.y !== 'number')) fail(`Lugar "${p.id}": faltan x/y`);
   else if (p.geometry.type === 'circle' && !(p.geometry.radius > 0)) fail(`Lugar "${p.id}": radio de círculo no válido`);
+  else if (p.geometry.type === 'poly' && !validPoly(p.geometry)) fail(`Lugar "${p.id}": geometría poly no válida (contours con puntos [x,y] y cx/cy)`);
   else placeById.set(p.id, p);
 }
 for (const p of places) {
@@ -46,6 +47,14 @@ for (const piece of mapData.pieces) {
   else if (![piece.x, piece.y, piece.width, piece.height].every((n) => typeof n === 'number' && n >= 0)) fail(`Pieza "${piece.id}": x/y/width/height deben ser números`);
   else if (!fs.existsSync(path.join(CONTENT, piece.file))) fail(`Pieza "${piece.id}": no existe el archivo ${piece.file}`);
   else pieceById.set(piece.id, piece);
+}
+
+function validPoly(geometry) {
+  if (!Array.isArray(geometry.contours) || !geometry.contours.length) return false;
+  if (typeof geometry.cx !== 'number' || typeof geometry.cy !== 'number') return false;
+  return geometry.contours.every((c) =>
+    Array.isArray(c) && c.length >= 3 &&
+    c.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every((n) => typeof n === 'number')))
 }
 
 const eras = (() => {
@@ -120,6 +129,11 @@ function insidePiece(geometry, piece) {
   if (geometry.type === 'point') {
     return geometry.x >= piece.x && geometry.x <= piece.x + piece.width &&
       geometry.y >= piece.y && geometry.y <= piece.y + piece.height;
+  }
+  if (geometry.type === 'poly') {
+    return geometry.contours.flat().every(([px, py]) =>
+      px >= piece.x && px <= piece.x + piece.width &&
+      py >= piece.y && py <= piece.y + piece.height);
   }
   return geometry.x - geometry.radius >= piece.x && geometry.x + geometry.radius <= piece.x + piece.width &&
     geometry.y - geometry.radius >= piece.y && geometry.y + geometry.radius <= piece.y + piece.height;
@@ -217,7 +231,7 @@ function storyRecord(s) {
 const records = new Map(published.map((s) => [s.id, storyRecord(s)]));
 const indexData = {
   mapSize: mapData.size,
-  totalPieces: publishedPieces.size,
+  totalPieces: mapData.pieces.length,
   complete: { file: mapData.complete.file, width: mapData.size.width, height: mapData.size.height },
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
@@ -461,11 +475,17 @@ const authoredComplete = path.join(CONTENT, mapData.complete.file);
 if (allPublished && fs.existsSync(authoredComplete)) {
   copyDir(authoredComplete, path.join(OUT, mapData.complete.file));
 } else {
-  const inner = [...publishedPieces.values()].map((p) => {
-    const svg = fs.readFileSync(path.join(CONTENT, p.file), 'utf8');
+  const toEmbed = (p) => {
+    const file = path.join(CONTENT, p.file);
+    if (p.file.endsWith('.png')) {
+      const b64 = fs.readFileSync(file).toString('base64');
+      return `<image x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" href="data:image/png;base64,${b64}"/>`;
+    }
+    const svg = fs.readFileSync(file, 'utf8');
     const body = svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
     return `<svg x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" viewBox="0 0 ${p.width} ${p.height}">${body}</svg>`;
-  }).join('\n');
+  };
+  const inner = [...publishedPieces.values()].map(toEmbed).join('\n');
   writeOut(mapData.complete.file,
     `<svg xmlns="http://www.w3.org/2000/svg" width="${mapData.size.width}" height="${mapData.size.height}" viewBox="0 0 ${mapData.size.width} ${mapData.size.height}">\n${inner}\n</svg>\n`);
 }

@@ -65,6 +65,13 @@
         c.setAttribute('cx', g.x); c.setAttribute('cy', g.y); c.setAttribute('r', g.radius);
         c.setAttribute('class', 'region-circle faint');
         svg.appendChild(c);
+      } else if (g.type === 'poly') {
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', g.contours.map(function (pts) {
+          return 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
+        }).join(''));
+        path.setAttribute('class', 'region-poly faint');
+        svg.appendChild(path);
       }
     });
     var usedIds = {};

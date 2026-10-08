@@ -88,7 +88,7 @@
     if (!place) return [];
     return visibleDocs().filter(function (d) {
       if (d.places.indexOf(placeId) >= 0) return true;
-      if (place.geometry.type === 'circle') {
+      if (place.geometry.type !== 'point') {
         return d.places.some(function (pid) {
           var p = state.places.get(pid);
           return p && p.parent === placeId;
@@ -167,6 +167,7 @@
       g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 6 / k); });
       g.querySelectorAll('.place-label').forEach(function (t) { t.setAttribute('font-size', 13 / k); });
       g.querySelectorAll('.region-circle').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
+      g.querySelectorAll('.region-poly').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
       g.querySelectorAll('.region-label').forEach(function (t) { t.setAttribute('font-size', 15 / k); });
     });
   }
@@ -230,6 +231,13 @@
         svgEl('circle', { class: 'place-dot', cx: geom.x, cy: geom.y, r: 6 }, g);
         var t = svgEl('text', { class: 'place-label', x: geom.x + 10, y: geom.y + 4 }, g);
         t.textContent = place.name;
+      } else if (geom.type === 'poly') {
+        var d = geom.contours.map(function (pts) {
+          return 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
+        }).join('');
+        svgEl('path', { class: 'region-poly', d: d }, g);
+        var pt = svgEl('text', { class: 'region-label', x: geom.cx, y: geom.cy, 'text-anchor': 'middle' }, g);
+        pt.textContent = place.name;
       } else {
         svgEl('circle', { class: 'region-circle', cx: geom.x, cy: geom.y, r: geom.radius }, g);
         var rt = svgEl('text', { class: 'region-label', x: geom.x, y: geom.y - geom.radius - 10, 'text-anchor': 'middle' }, g);

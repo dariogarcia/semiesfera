@@ -222,6 +222,8 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .place-label { fill: var(--text); font-family: var(--font-sans); paint-order: stroke; stroke: rgba(10, 20, 29, 0.85); stroke-width: 3px; }
 .region-circle { fill: rgba(226, 148, 107, 0.04); stroke: var(--text-dim); }
 .region-circle.faint { fill: transparent; }
+.region-poly { fill: rgba(226, 148, 107, 0.04); stroke: var(--text-dim); }
+.region-poly.faint { fill: transparent; }
 .region-label { fill: var(--text-dim); font-family: var(--font-sans); letter-spacing: 2px; }
 
 /* revelado con fundido */
@@ -274,7 +276,7 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .place-g { cursor: pointer; outline: none; }
 .place-g .place-dot { transition: r 0.1s; }
 .place-g.lit .place-dot { fill: #ffd9a8; stroke: #fff; }
-.place-g.lit .region-circle { stroke: var(--accent); fill: rgba(226, 148, 107, 0.10); }
+.place-g.lit .region-circle, .place-g.lit .region-poly { stroke: var(--accent); fill: rgba(226, 148, 107, 0.10); }
 .place-g.lit .place-label, .place-g.lit .region-label { fill: #fff; }
 .place-g.dimmed { opacity: 0.25; }
 
