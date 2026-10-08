@@ -224,6 +224,7 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .reward-hint { color: var(--text-dim); font-size: 14px; }
 
 .place-dot { fill: var(--accent); stroke: #101820; stroke-width: 1.5; }
+.place-hit { fill: transparent; }
 .place-label { fill: var(--text); font-family: var(--font-sans); paint-order: stroke; stroke: rgba(10, 20, 29, 0.85); stroke-width: 3px; }
 .region-circle { fill: rgba(226, 148, 107, 0.04); stroke: var(--text-dim); }
 .region-circle.faint { fill: transparent; }
@@ -316,8 +317,9 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .range-band { fill: rgba(226, 148, 107, 0.18); stroke: var(--accent); stroke-width: 1; }
 .range-band.preview { fill: rgba(226, 148, 107, 0.10); stroke-dasharray: 4 3; }
 .tl-doc { cursor: pointer; outline: none; }
+.tl-hit { fill: transparent; }
 .tl-point { stroke: #101820; stroke-width: 1.5; }
-.tl-doc.lit .tl-point { stroke: #fff; r: 8; }
+.tl-doc.lit .tl-point { stroke: #fff; r: 9; }
 .tl-cluster.lit .cluster-circle { stroke: #fff; stroke-width: 2; }
 .tl-doc.dimmed { opacity: 0.2; }
 .tl-cluster { cursor: pointer; }

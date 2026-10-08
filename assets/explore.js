@@ -185,7 +185,8 @@
   function updateMapScale() {
     var k = view.k;
     placeEls.forEach(function (g) {
-      g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 6 / k); });
+      g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 9 / k); });
+      g.querySelectorAll('.place-hit').forEach(function (c) { c.setAttribute('r', 16 / k); });
       g.querySelectorAll('.place-label').forEach(function (t) { t.setAttribute('font-size', 13 / k); });
       g.querySelectorAll('.region-circle').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
       g.querySelectorAll('.region-poly').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
@@ -249,8 +250,10 @@
       }, svg);
       var geom = place.geometry;
       if (geom.type === 'point') {
-        svgEl('circle', { class: 'place-dot', cx: geom.x, cy: geom.y, r: 6 }, g);
-        var t = svgEl('text', { class: 'place-label', x: geom.x + 10, y: geom.y + 4 }, g);
+        // área de clic generosa: el punto visible + un halo transparente
+        svgEl('circle', { class: 'place-hit', cx: geom.x, cy: geom.y, r: 16 }, g);
+        svgEl('circle', { class: 'place-dot', cx: geom.x, cy: geom.y, r: 9 }, g);
+        var t = svgEl('text', { class: 'place-label', x: geom.x + 13, y: geom.y + 4 }, g);
         t.textContent = place.name;
       } else if (geom.type === 'poly') {
         var d = geom.contours.map(function (pts) {
@@ -449,7 +452,7 @@
         var c = { x: cx, docs: group.map(function (g) { return g.d; }) };
         clusters.push(c);
         var g2 = svgEl('g', { class: 'tl-cluster', 'data-cluster': clusters.length - 1, role: 'button', tabindex: '0', 'aria-label': c.docs.length + ' documentos juntos' }, svg);
-        svgEl('circle', { class: 'cluster-circle', cx: cx, cy: 56, r: 14 }, g2);
+        svgEl('circle', { class: 'cluster-circle', cx: cx, cy: 56, r: 16 }, g2);
         var ct = svgEl('text', { class: 'cluster-count', x: cx, y: 60, 'text-anchor': 'middle' }, g2);
         ct.textContent = String(c.docs.length);
         g2.addEventListener('click', function (e) {
@@ -499,8 +502,9 @@
         stroke: color, 'stroke-width': 6, 'stroke-linecap': 'round'
       }, g);
     }
+    svgEl('circle', { class: 'tl-hit', cx: xOf(d.year), cy: 56, r: 14 }, g);
     svgEl('circle', {
-      class: 'tl-point', cx: xOf(d.year), cy: 56, r: 6,
+      class: 'tl-point', cx: xOf(d.year), cy: 56, r: 8,
       fill: color
     }, g);
     docEls.set(d.id, g);
@@ -532,6 +536,13 @@
   }
 
   function initTimelineEvents() {
+    // clic en zona vacía de la línea de tiempo: quita el filtro de periodo
+    dom.tlSvg.addEventListener('click', function (e) {
+      if (tlSuppressClick) return;
+      if (e.target.closest('.tl-doc') || e.target.closest('.tl-cluster')) return;
+      if (state.range) clearRangeFilter();
+    });
+
     dom.tlSvg.addEventListener('wheel', function (e) {
       e.preventDefault();
       var rect = dom.tlSvg.getBoundingClientRect();
