@@ -421,6 +421,7 @@ const exploreMain = `<main class="explore" data-explore>
       <span class="dp-count" data-dp-count></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
     </div>
+    <div class="dp-filters" data-dp-filters hidden></div>
     <div class="dp-body" data-dp-body>
       <ol class="dp-list" data-dp-list></ol>
       <p class="dp-none" data-dp-none>Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.</p>

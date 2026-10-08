@@ -83,6 +83,27 @@
     });
   }
 
+  // filtro activo: lugar seleccionado Y/O periodo — se aplica a la línea de
+  // tiempo y al panel de documentos
+  function filteredDocs() {
+    var list = state.docs;
+    if (state.sel.place) {
+      var ids = new Set(docsAtPlace(state.sel.place).map(function (d) { return d.id; }));
+      list = list.filter(function (d) { return ids.has(d.id); });
+    }
+    if (state.range) {
+      list = list.filter(function (d) {
+        var y2 = d.yearEnd != null ? d.yearEnd : d.year;
+        return d.year <= state.range.to && y2 >= state.range.from;
+      });
+    }
+    return list;
+  }
+
+  function filterActive() {
+    return !!(state.sel.place || state.range);
+  }
+
   function docsAtPlace(placeId) {
     var place = state.places.get(placeId);
     if (!place) return [];
@@ -323,7 +344,9 @@
       if (state.sel.place) {
         state.sel.place = null;
         syncUrl();
+        renderTimeline();
         updateHighlights();
+        renderDocsPanel();
       }
     });
 
@@ -407,8 +430,8 @@
       tl.textContent = S.fmtYear(y);
     }
 
-    // documentos (con agrupación en zonas densas)
-    var vis = visibleDocs();
+    // documentos (con agrupación en zonas densas) — solo los del filtro activo
+    var vis = filteredDocs();
     var items = vis.map(function (d) {
       return { d: d, x: xOf(d.year) };
     }).sort(function (a, b) { return a.x - b.x; });
@@ -451,6 +474,13 @@
       }
     }
     updateTimelineHighlight();
+    var hasDocs = state.docs.length > 0;
+    var empty = !hasDocs || !vis.length;
+    dom.tlEmpty.textContent = hasDocs
+      ? 'Ningún documento encaja con el filtro.'
+      : 'La línea de tiempo se llenará con los documentos de las historias que leas.';
+    dom.tlEmpty.hidden = !empty;
+    dom.tlSvg.style.display = empty ? 'none' : '';
   }
 
   function drawDocItem(item) {
@@ -568,6 +598,7 @@
         renderTimeline();
         updateHighlights();
         updateRangeChip();
+        renderDocsPanel();
       }
     }
     dom.tlSvg.addEventListener('pointerup', endTlDrag);
@@ -594,10 +625,7 @@
     btn.className = 'chip-close';
     btn.setAttribute('aria-label', 'Quitar el filtro de periodo');
     btn.textContent = '×';
-    btn.addEventListener('click', function () {
-      state.range = null;
-      syncUrl(); renderTimeline(); updateHighlights(); updateRangeChip();
-    });
+    btn.addEventListener('click', clearRangeFilter);
     chip.appendChild(span);
     chip.appendChild(btn);
   }
@@ -632,7 +660,7 @@
   function updateMapHighlight() {
     var h = currentHighlight();
     var visibleIds = new Set();
-    visibleDocs().forEach(function (d) {
+    filteredDocs().forEach(function (d) {
       d.places.forEach(function (pid) { visibleIds.add(pid); });
       d.places.forEach(function (pid) {
         var p = state.places.get(pid);
@@ -647,24 +675,24 @@
 
   function updateTimelineHighlight() {
     var h = currentHighlight();
-    var vis = new Set(visibleDocs().map(function (d) { return d.id; }));
     docEls.forEach(function (g, id) {
       g.classList.toggle('lit', h.docIds.has(id));
-      g.classList.toggle('dimmed', !vis.has(id));
+    });
+    clusters.forEach(function (cl, i) {
+      var g = dom.tlSvg.querySelector('[data-cluster="' + i + '"]');
+      if (g) g.classList.toggle('lit', cl.docs.some(function (d) { return h.docIds.has(d.id); }));
     });
   }
 
   function updateDocsPanelHighlight(scroll) {
     if (!dom.dpList) return;
     var h = currentHighlight();
-    var inRange = new Set(visibleDocs().map(function (d) { return d.id; }));
     var first = null;
     dom.dpList.querySelectorAll('.dp-entry').forEach(function (li) {
       var id = li.getAttribute('data-dp-doc');
       var lit = h.docIds.has(id);
       li.classList.toggle('lit', lit);
       li.classList.toggle('active', state.sel.doc === id);
-      li.classList.toggle('dimmed', !!state.range && !inRange.has(id));
       if (lit && !first) first = li;
     });
     if (scroll && first) centerDpEntry(first);
@@ -737,10 +765,12 @@
     var revealed = !!findDoc(docId);
     state.readerDoc = docId;
     if (revealed) {
+      var hadPlace = state.sel.place;
       state.sel.doc = docId;
       state.sel.place = null;
       syncUrl();
       updateHighlights(true);
+      if (hadPlace) { renderTimeline(); renderDocsPanel(); }
     }
     if (!dom.reader) buildReader();
     updateReader();
@@ -798,7 +828,9 @@
     if (state.sel.place === id) state.sel.place = null;
     else { state.sel.place = id; state.sel.doc = null; }
     syncUrl();
+    renderTimeline();
     updateHighlights(true);
+    renderDocsPanel();
   }
 
   function clearSelection() {
@@ -810,6 +842,7 @@
     renderTimeline();
     updateHighlights();
     updateRangeChip();
+    renderDocsPanel();
   }
 
   // -- URL como estado ---------------------------------------------------------------------
@@ -890,10 +923,65 @@
     });
   }
 
+  function makeFilterChip(text, title, onRemove) {
+    var chip = document.createElement('span');
+    chip.className = 'tl-range-chip';
+    chip.title = title;
+    var t = document.createElement('span');
+    t.textContent = text;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip-close';
+    btn.setAttribute('aria-label', 'Quitar el filtro');
+    btn.textContent = '×';
+    btn.addEventListener('click', onRemove);
+    chip.appendChild(t);
+    chip.appendChild(btn);
+    return chip;
+  }
+
+  function clearPlaceFilter() {
+    state.sel.place = null;
+    syncUrl();
+    renderTimeline();
+    updateHighlights();
+    renderDocsPanel();
+  }
+
+  function clearRangeFilter() {
+    state.range = null;
+    syncUrl();
+    renderTimeline();
+    updateHighlights();
+    updateRangeChip();
+    renderDocsPanel();
+  }
+
+  function updateFilterChips() {
+    var bar = dom.dpFilters;
+    if (!bar) return;
+    bar.innerHTML = '';
+    if (!filterActive()) { bar.hidden = true; return; }
+    if (state.sel.place) {
+      var p = state.places.get(state.sel.place);
+      var pname = p ? p.name : state.sel.place;
+      bar.appendChild(makeFilterChip(pname, 'Lugar seleccionado', clearPlaceFilter));
+    }
+    if (state.range) {
+      bar.appendChild(makeFilterChip(
+        S.fmtSpan(state.range.from, state.range.to),
+        'Periodo seleccionado',
+        clearRangeFilter
+      ));
+    }
+    bar.hidden = false;
+  }
+
   function renderDocsPanel() {
     if (!dom.dpList) return;
+    var list = filteredDocs();
     var html = '';
-    state.docs.forEach(function (d) {
+    list.forEach(function (d) {
       var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
       html += '<li class="dp-entry" data-dp-doc="' + S.esc(d.id) + '">' +
         '<button type="button" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
@@ -903,9 +991,20 @@
         '</button></li>';
     });
     dom.dpList.innerHTML = html;
-    dom.dpNone.hidden = state.docs.length > 0;
-    var n = state.docs.length;
-    dom.dpCount.textContent = n ? n + (n === 1 ? ' documento' : ' documentos') : '';
+    if (!state.docs.length) {
+      dom.dpNone.textContent = 'Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.';
+      dom.dpNone.hidden = false;
+    } else if (!list.length) {
+      dom.dpNone.textContent = 'Ningún documento encaja con el filtro.';
+      dom.dpNone.hidden = false;
+    } else {
+      dom.dpNone.hidden = true;
+    }
+    var n = list.length;
+    dom.dpCount.textContent = filterActive()
+      ? n + ' de ' + state.docs.length + ' documentos'
+      : (n ? n + (n === 1 ? ' documento' : ' documentos') : '');
+    updateFilterChips();
     bindDocHover(dom.dpList);
     updateDocsPanelHighlight();
   }
@@ -1077,8 +1176,6 @@
 
   function updateHints() {
     dom.mapHint.hidden = state.pieces.length > 0;
-    dom.tlEmpty.hidden = state.docs.length > 0;
-    dom.tlSvg.style.display = state.docs.length ? '' : 'none';
   }
 
   // -- arranque ------------------------------------------------------------------------------
@@ -1097,6 +1194,7 @@
     dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
     dom.dpNone = document.querySelector('[data-dp-none]');
+    dom.dpFilters = document.querySelector('[data-dp-filters]');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -1141,6 +1239,7 @@
         initTimelineEvents();
         refreshWorld();
         applyUrl();
+        renderTimeline();
         updateHighlights();
         renderStoriesPanel();
         renderDocsPanel();
