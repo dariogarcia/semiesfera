@@ -7,7 +7,7 @@ pdf: story.pdf
 summary: "La leyenda de Xunei Thun, el primer interlande, contada por los papeles que sobrevivieron: audioguías de museo, edictos reales, cartas desde la mina-celda y un diario descubierto siglos después."
 sequence: 1
 reveals:
-  - p-lande-17
+  - p-lande-14
 documents:
   - image: docs/d1.png
     alt: Museo Xunei Thun de Arte, Taaku. Audioguía para visitantes.

@@ -57,7 +57,12 @@ Qué hace (en orden):
 4. **Contornos** de cada lande (trazado Moore + simplificación
    Douglas-Peucker, 1.5 px) → geometría `poly` en `places.json`.
 5. **Conserva** los lugares `point` existentes y sus `parent` (si el parent
-   sigue existiendo; si no, avisa).
+   sigue existiendo; si no, avisa) y los **nombres editados** de los landes
+   (mismo id → mismo nombre).
+6. **Lagos**: cada región de lago se asigna al lande vecino mayoritario (los
+   lagos no tienen cultura propia), para que aparezcan azules en la pieza
+   revelada en vez de transparentes. Los que no tocan ningún lande solo
+   salen en el mapa completo.
 
 Opciones:
 
@@ -101,23 +106,26 @@ siguen cayendo dentro de su lande. Edita a mano `content/places.json`:
 - Truco: para elegir coordenadas dentro de un lande irregular, usa el
   centroide (`cx`/`cy` de su geometría `poly`) y muévete desde ahí.
 
-### 3.5 Renombra landes (cuando haya nombres definitivos)
+### 3.5 Nombra los landes
 
-Los landes nacen con nombre provisional «Lande 14»…«Lande 21». Para
-renombrar, toca todos estos sitios:
+Los landes nacen con nombre provisional «Lande 14»…«Lande 21». Para darles
+su nombre real basta editar `name` en `content/places.json`: **el script
+conserva los nombres entre regeneraciones** (mismo id de lande → mismo
+nombre). No cambies el `id` (ni el archivo de la pieza): el id viene del
+número de cultura del generador y es lo que enlaza pieza, contorno y
+`reveals` de las historias.
+
+Si aun así renombraras un id, toca todos estos sitios:
 
 | Dónde                          | Qué cambia                                  |
 | ------------------------------ | ------------------------------------------- |
-| `content/places.json`          | `id` (lande-17 → lande-taaku), `name`       |
+| `content/places.json`          | `id` (lande-17 → lande-ixam), `parent` de puntos |
 | `content/pieces/p-lande-17.png`| Renombrar el archivo                        |
 | `content/map-pieces.json`      | `id` de la pieza y `file`                   |
 | `story.md` de cada historia    | `reveals`, `places` de docs, `parent` de puntos |
 
-(El script siempre genera ids `lande-<c>` a partir del número de cultura: tras
-renombrar, una regeneración futura volverá a crear el lande con su id del
-generador y el renombrado quedará como pieza huérfana. Renombrar es un paso
-editorial posterior; si regeneras después de renombrar, revisa
-`map-pieces.json` y `places.json` para fusionar los duplicados.)
+(Y una regeneración futura volvería a crear el lande con su id del
+generador; tendrías que fusionar los duplicados a mano.)
 
 ### 3.6 Valida
 

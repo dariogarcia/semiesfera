@@ -167,9 +167,44 @@ const gj = JSON.parse(fs.readFileSync(GEOJSON, 'utf8'));
 const cells = gj.features.map((f) => ({
   ring: f.geometry.coordinates[0],
   culture: f.properties.culture,
-  type: f.properties.type
+  type: f.properties.type,
+  neighbors: f.properties.neighbors || []
 }));
 console.log(`celdas: ${cells.length}  lienzo de origen: ${W}x${H}`);
+
+// -- lagos: cada región de lago se asigna al lande vecino mayoritario ----------------
+// (los lagos no tienen cultura propia; sin esto quedan transparentes en las
+// piezas y parecen tierra no revelada)
+
+const byCellId = new Map(gj.features.map((f, i) => [f.properties.id ?? i, i]));
+const lakeSeen = new Set();
+let lakesAssigned = 0, lakesOrphan = 0;
+const lakeCulture = new Map(); // cell index -> culture asignada
+for (let i = 0; i < cells.length; i++) {
+  if (cells[i].type !== 'lake' || lakeSeen.has(i)) continue;
+  // región conexa de lagos
+  const region = [i];
+  lakeSeen.add(i);
+  for (let k = 0; k < region.length; k++) {
+    for (const n of cells[region[k]].neighbors) {
+      const idx = byCellId.get(n);
+      if (idx !== undefined && cells[idx].type === 'lake' && !lakeSeen.has(idx)) { lakeSeen.add(idx); region.push(idx); }
+    }
+  }
+  // mayoría de culturas lande entre los vecinos no-lago de la región
+  const votes = new Map();
+  for (const ci of region) {
+    for (const n of cells[ci].neighbors) {
+      const c = cells[byCellId.get(n)];
+      if (c && c.type !== 'lake' && c.culture) votes.set(c.culture, (votes.get(c.culture) || 0) + 1);
+    }
+  }
+  const winner = [...votes.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+  if (!winner) { lakesOrphan += region.length; continue; }
+  for (const ci of region) lakeCulture.set(ci, winner[0]);
+  lakesAssigned += region.length;
+}
+console.log(`lagos: ${lakesAssigned} asignados a landes, ${lakesOrphan} sin lande vecino (solo en el mapa completo)`);
 
 // -- recorte del lienzo (hemisferio descrito) --------------------------------------
 
@@ -298,10 +333,11 @@ function rdp(points, eps) {
 // -- piezas y landes -----------------------------------------------------------------
 
 const byCulture = new Map();
-for (const c of cells) {
-  if (c.culture === 0 || c.culture == null) continue;
-  if (!byCulture.has(c.culture)) byCulture.set(c.culture, []);
-  byCulture.get(c.culture).push(c);
+for (let i = 0; i < cells.length; i++) {
+  const culture = lakeCulture.get(i) || cells[i].culture;
+  if (!culture) continue;
+  if (!byCulture.has(culture)) byCulture.set(culture, []);
+  byCulture.get(culture).push(cells[i]);
 }
 
 const piecesDir = path.join(ROOT, 'content', 'pieces');
@@ -313,6 +349,16 @@ for (const old of fs.readdirSync(piecesDir)) {
 const places = [];
 const pieces = [];
 const SS = 2; // sobremuestreo de la máscara para suavizar bordes
+
+// nombres de landes ya editados (se conservan entre regeneraciones)
+const placesFile = path.join(ROOT, 'content', 'places.json');
+let prevPlaces = [];
+if (fs.existsSync(placesFile)) {
+  prevPlaces = JSON.parse(fs.readFileSync(placesFile, 'utf8')).places || [];
+}
+const prevNames = new Map(
+  prevPlaces.filter((p) => p.geometry && p.geometry.type !== 'point').map((p) => [p.id, p.name])
+);
 
 for (const [culture, list] of [...byCulture.entries()].sort((a, b) => a[0] - b[0])) {
   let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
@@ -379,7 +425,7 @@ for (const [culture, list] of [...byCulture.entries()].sort((a, b) => a[0] - b[0
   const labelY = Math.round((cySum / areaSum + by0 - y0) * 10) / 10;
   places.push({
     id,
-    name: `Lande ${culture}`,
+    name: prevNames.get(id) || `Lande ${culture}`,
     geometry: { type: 'poly', contours, cx: labelX, cy: labelY }
   });
   pieces.push({
@@ -411,15 +457,10 @@ for (const old of fs.readdirSync(completeDir)) {
 
 // se conservan los lugares puntuales existentes (ciudades de las historias);
 // el usuario los recoloca a mano dentro de su lande
-const placesFile = path.join(ROOT, 'content', 'places.json');
-let pointPlaces = [];
-if (fs.existsSync(placesFile)) {
-  const prev = JSON.parse(fs.readFileSync(placesFile, 'utf8'));
-  pointPlaces = (prev.places || []).filter((p) => p.geometry && p.geometry.type === 'point');
-  for (const p of pointPlaces) {
-    if (p.parent && !places.some((l) => l.id === p.parent)) {
-      console.warn(`  aviso: el lugar "${p.id}" tenía parent "${p.parent}", que ya no existe`);
-    }
+let pointPlaces = prevPlaces.filter((p) => p.geometry && p.geometry.type === 'point');
+for (const p of pointPlaces) {
+  if (p.parent && !places.some((l) => l.id === p.parent)) {
+    console.warn(`  aviso: el lugar "${p.id}" tenía parent "${p.parent}", que ya no existe`);
   }
 }
 fs.writeFileSync(placesFile, JSON.stringify({ places: [...places, ...pointPlaces] }, null, 2) + '\n');

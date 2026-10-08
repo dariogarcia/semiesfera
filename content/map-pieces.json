@@ -52,9 +52,9 @@
       "id": "p-lande-19",
       "file": "pieces/p-lande-19.png",
       "x": 151,
-      "y": 97,
+      "y": 95,
       "width": 396,
-      "height": 380,
+      "height": 382,
       "regions": [
         "lande-19"
       ]
@@ -65,7 +65,7 @@
       "x": 0,
       "y": 26,
       "width": 1920,
-      "height": 297,
+      "height": 303,
       "regions": [
         "lande-20"
       ]
