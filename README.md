@@ -57,7 +57,7 @@ content/            el mundo, editado a mano
   pieces/           imágenes de las piezas (PNG enmascarados por lande)
   stories/<id>/     story.md (frontmatter + cuerpo), cover.svg, story.pdf, docs/
 assets/             CSS y JS del cliente (se copian al construir)
-tools/              importador de historias, generador del mapa, servidor dev, smoke test
+tools/              importador de historias, generador del mapa, editor de lugares, servidor dev, smoke test
 build.mjs           generador del sitio (Node, sin dependencias)
 public/             salida del build (ignorada por git)
 ```

@@ -93,18 +93,26 @@ existe o si un lugar queda fuera de las piezas reveladas por su historia.
 ### 3.4 Recoloca los lugares puntuales
 
 El script conserva los `point` (ciudades de las historias) pero no sabe si
-siguen cayendo dentro de su lande. Edita a mano `content/places.json`:
+siguen cayendo dentro de su lande. La forma cómoda es el editor visual:
+
+```sh
+node tools/place-editor.mjs    # abre http://localhost:8179
+```
+
+Arrastra los puntos sobre el mapa (también las etiquetas de los landes,
+que mueven su `cx`/`cy`), pulsa **Guardar** y después `npm run build`. El
+editor escribe directamente `content/places.json`.
+
+A mano también vale, editando `content/places.json`:
 
 ```json
-{ "id": "taaku", "name": "Taaku", "parent": "lande-17",
-  "geometry": { "type": "point", "x": 706.5, "y": 258.2 } }
+{ "id": "taaku", "name": "Taaku", "parent": "lande-14",
+  "geometry": { "type": "point", "x": 1221.0, "y": 208.1 } }
 ```
 
 - `x`/`y` son píxeles del lienzo (mismo sistema que las piezas).
 - `parent` debe ser el lande que la contiene: al apuntar el lande se
   iluminan los documentos de todos sus hijos.
-- Truco: para elegir coordenadas dentro de un lande irregular, usa el
-  centroide (`cx`/`cy` de su geometría `poly`) y muévete desde ahí.
 
 ### 3.5 Nombra los landes
 
