@@ -197,6 +197,10 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .doc figcaption { padding: 8px 4px 0; font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .doc-label { font-weight: 600; color: var(--text); }
 .doc-meta { color: var(--accent); }
+/* imágenes de la narrativa: centradas y con el ancho de la fuente original */
+.story-body .doc.image, .story-sheet-body .doc.image { margin: 34px auto; }
+/* entradas de imagen en el panel de documentos */
+.dp-entry.dp-image > button { border-left-color: var(--accent); }
 
 .locked-notice {
   border: 1px solid var(--line);

@@ -110,6 +110,19 @@ for (const id of fs.readdirSync(storiesDir).sort()) {
     if (typeof d.year !== 'number' || !Number.isInteger(d.year)) fail(`${where}: "year" debe ser un entero`);
     if (d.yearEnd != null && (typeof d.yearEnd !== 'number' || d.yearEnd < d.year)) fail(`${where}: "yearEnd" debe ser >= year`);
   });
+  if (s.images != null) {
+    if (!Array.isArray(s.images)) fail(`stories/${id}: "images" debe ser una lista`);
+    else s.images.forEach((im, i) => {
+      const where = `stories/${id}, imagen ${i + 1}`;
+      if (typeof im.file !== 'string' || !fs.existsSync(path.join(dir, im.file))) fail(`${where}: no existe el archivo ${im.file}`);
+      if (typeof im.alt !== 'string' || !im.alt.trim()) fail(`${where}: falta "alt"`);
+      if (im.width != null && (typeof im.width !== 'number' || im.width < 1 || im.width > 100)) fail(`${where}: "width" debe ser un porcentaje 1-100`);
+      if (!Array.isArray(im.places) || !im.places.length) fail(`${where}: "places" debe ser una lista no vacía`);
+      else for (const pid of im.places) if (!placeById.has(pid)) fail(`${where}: lugar desconocido "${pid}"`);
+      if (typeof im.year !== 'number' || !Number.isInteger(im.year)) fail(`${where}: "year" debe ser un entero`);
+      if (im.yearEnd != null && (typeof im.yearEnd !== 'number' || im.yearEnd < im.year)) fail(`${where}: "yearEnd" debe ser >= year`);
+    });
+  }
   stories.push(s);
 }
 
@@ -140,7 +153,7 @@ function insidePiece(geometry, piece) {
 }
 for (const s of stories) {
   const used = new Set();
-  for (const d of s.documents) {
+  for (const d of [...s.documents, ...(s.images || [])]) {
     for (const pid of d.places) {
       let cur = placeById.get(pid);
       while (cur) {
@@ -177,8 +190,9 @@ const publishedPieces = new Map();
 for (const s of published) for (const pid of s.reveals) publishedPieces.set(pid, pieceById.get(pid));
 
 function storyRecord(s) {
+  const items = [...s.documents, ...(s.images || [])];
   const placeIds = new Set();
-  for (const d of s.documents) {
+  for (const d of items) {
     for (const pid of d.places) {
       let cur = placeById.get(pid);
       while (cur) {
@@ -200,16 +214,48 @@ function storyRecord(s) {
     storyTitle: s.title,
     sequence: s.sequence
   }));
-  const years = s.documents.flatMap((d) => [d.year, d.yearEnd ?? d.year]);
-  // documentos en su sitio del texto; el src del <img> lo resuelve el cliente
-  // (data-doc-src, relativo a la raíz del sitio)
-  const bodyHtml = renderMarkdown(s.body).replace(/<p>\{\{d(\d+)\}\}<\/p>/g, (_, n) => {
-    const d = docs.find((x) => x.order === Number(n));
-    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{d${n}}} pero solo hay ${docs.length} documentos`);
-    return `<figure class="doc" data-doc-id="${d.id}" data-doc-src="${d.image}"><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span></figcaption></figure>`;
+  // las imágenes de la narrativa son documentos visuales: aparecen en el
+  // panel, la línea de tiempo y el lector igual que los documentos
+  const imgs = (s.images || []).map((im, i) => ({
+    id: `${s.id}-i${i + 1}`,
+    order: 0,
+    kind: 'image',
+    image: `stories/${s.id}/${im.file}`,
+    alt: im.alt,
+    label: `Imagen ${i + 1}`,
+    places: im.places,
+    year: im.year,
+    yearEnd: im.yearEnd ?? null,
+    width: im.width ?? null,
+    story: s.id,
+    storyTitle: s.title,
+    sequence: s.sequence
+  }));
+  // orden de lectura: posición de cada marcador {{dN}}/{{iN}} en el cuerpo;
+  // los no referenciados van al final en su orden natural
+  const orderMap = new Map();
+  let seqN = 0;
+  const markerRe = /\{\{([di])(\d+)\}\}/g;
+  let mm;
+  while ((mm = markerRe.exec(s.body))) {
+    if (!orderMap.has(mm[1] + mm[2])) orderMap.set(mm[1] + mm[2], ++seqN);
+  }
+  docs.forEach((d, i) => { if (!orderMap.has(`d${i + 1}`)) orderMap.set(`d${i + 1}`, ++seqN); });
+  imgs.forEach((im, i) => { if (!orderMap.has(`i${i + 1}`)) orderMap.set(`i${i + 1}`, ++seqN); });
+  docs.forEach((d, i) => { d.order = orderMap.get(`d${i + 1}`); });
+  imgs.forEach((im, i) => { im.order = orderMap.get(`i${i + 1}`); });
+  const all = docs.concat(imgs);
+  const years = all.flatMap((d) => [d.year, d.yearEnd ?? d.year]);
+  // documentos e imágenes en su sitio del texto; el src del <img> lo resuelve
+  // el cliente (data-doc-src, relativo a la raíz del sitio)
+  const bodyHtml = renderMarkdown(s.body).replace(/<p>\{\{([di])(\d+)\}\}<\/p>/g, (_, t, n) => {
+    const d = t === 'd' ? docs[Number(n) - 1] : imgs[Number(n) - 1];
+    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{${t}${n}}} pero solo hay ${docs.length} documentos y ${imgs.length} imágenes`);
+    const style = d.width ? ` style="max-width:${d.width}%"` : '';
+    return `<figure class="doc${t === 'i' ? ' image' : ''}" data-doc-id="${d.id}" data-doc-src="${d.image}"${style}><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span></figcaption></figure>`;
   });
   const storyEras = eras.filter((era) =>
-    s.documents.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
+    all.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
   );
   return {
     id: s.id,
@@ -229,7 +275,7 @@ function storyRecord(s) {
       const p = placeById.get(pid);
       return { id: p.id, name: p.name, parent: p.parent ?? null, geometry: p.geometry };
     }),
-    documents: docs,
+    documents: all,
     span: { from: Math.min(...years), to: Math.max(...years) },
     eras: storyEras
   };
@@ -306,7 +352,7 @@ function landingMain() {
 // --- página de historia -----------------------------------------------------
 
 function storyMain(s, rec) {
-  const docFigure = (d) => `<figure class="doc" data-doc-id="${d.id}">
+  const docFigure = (d) => `<figure class="doc${d.kind === 'image' ? ' image' : ''}" data-doc-id="${d.id}"${d.width ? ` style="max-width:${d.width}%"` : ''}>
         <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
         <figcaption>
           <span class="doc-label">${escapeHtml(d.label)}</span>
@@ -314,13 +360,14 @@ function storyMain(s, rec) {
         </figcaption>
       </figure>`;
 
-  // los documentos se muestran donde estaban en el texto (marcadores {{dN}});
-  // los que no tengan marcador quedan en la lista final
+  // los documentos e imágenes se muestran donde estaban en el texto
+  // (marcadores {{dN}}/{{iN}}); los que no tengan marcador quedan en la lista final
+  const byId = new Map(rec.documents.map((d) => [d.id, d]));
   const placed = new Set();
   let bodyHtml = renderMarkdown(s.body);
-  bodyHtml = bodyHtml.replace(/<p>\{\{d(\d+)\}\}<\/p>/g, (_, n) => {
-    const d = rec.documents.find((x) => x.order === Number(n));
-    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{d${n}}} pero solo hay ${rec.documents.length} documentos`);
+  bodyHtml = bodyHtml.replace(/<p>\{\{([di])(\d+)\}\}<\/p>/g, (_, t, n) => {
+    const d = byId.get(t === 'd' ? `${s.id}-${n}` : `${s.id}-i${n}`);
+    if (!d) fail(`stories/${s.id}: el cuerpo referencia {{${t}${n}}} pero no existe ese elemento`);
     placed.add(d.id);
     return docFigure(d);
   });

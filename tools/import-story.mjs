@@ -26,7 +26,7 @@ const PALETTE = ['#e2946b', '#79b6a9', '#dfc17e', '#a48ec9', '#7fa6c9', '#c9836f
 // Argumentos
 // ---------------------------------------------------------------------------
 
-const VALUE_FLAGS = ['id', 'volume', 'title', 'sequence', 'publish', 'summary', 'reveals', 'place', 'place-map', 'label', 'pdf'];
+const VALUE_FLAGS = ['id', 'volume', 'title', 'sequence', 'publish', 'summary', 'reveals', 'place', 'place-map', 'label', 'pdf', 'imgs-dir', 'maps-dir', 'img-place', 'img-year'];
 const BOOL_FLAGS = ['no-render', 'force'];
 
 function parseArgs(argv) {
@@ -173,6 +173,32 @@ function splitDocBoxes(body) {
   }
   if (cur.join('\n').trim()) segs.push({ type: 'narrative', content: cur.join('\n') });
   return segs;
+}
+
+// ---------------------------------------------------------------------------
+// Imágenes de la narrativa: figuras → marcadores {{iN}}
+// ---------------------------------------------------------------------------
+
+// extrae \begin{figure}/wrapfigure y \includegraphics sueltos del texto,
+// dejando un marcador {{iN}} en su sitio. Devuelve { text, images }.
+function extractNarrativeImages(text, startAt) {
+  const images = [];
+  let n = startAt;
+  const take = (chunk) => {
+    const pathM = chunk.match(/\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}/);
+    if (!pathM || /#/.test(pathM[1])) return '';
+    const src = pathM[1].trim();
+    const widthM = chunk.match(/width\s*=\s*([\d.]+)\\linewidth/);
+    const captionM = chunk.match(/\\caption\*?\s*\{([\s\S]*?)\}\s*(?:\\vspace|\\end|$)/);
+    const caption = captionM ? plainText(captionM[1]) : '';
+    images.push({ n: ++n, src, width: widthM ? Math.round(parseFloat(widthM[1]) * 100) : null, caption });
+    return `{{i${n}}}`;
+  };
+  let t = text;
+  t = t.replace(/\\begin\{figure\}[\s\S]*?\\end\{figure\}/g, take);
+  t = t.replace(/\\begin\{wrapfigure\}[\s\S]*?\\end\{wrapfigure\}/g, take);
+  t = t.replace(/\\includegraphics(?:\[[^\]]*\])?\{[^}]*\}/g, (m) => (/#/.test(m) ? m : take(m)));
+  return { text: t, images, count: n };
 }
 
 // ---------------------------------------------------------------------------
@@ -455,6 +481,12 @@ reveals:
 ${story.reveals.map((p) => `  - ${p}`).join('\n')}
 documents:
 ${docYaml.join('\n')}
+images:
+${story.images.map((im) => `  - file: ${im.file}
+    alt: ${yamlScalar(im.alt)}${im.width != null ? `\n    width: ${im.width}` : ''}
+    places:
+${im.places.map((p) => `      - ${p}`).join('\n')}
+    year: ${im.year}`).join('\n')}
 ---
 
 `;
@@ -476,16 +508,20 @@ function main() {
   const segments = splitDocBoxes(src.body);
   const docSegs = segments.filter((s) => s.type === 'doc');
   if (!docSegs.length) throw new Error('La fuente no contiene doc-boxes (::: {.doc-box})');
-  // narrativa con marcadores {{dN}} donde estaba cada doc-box
-  // (el build los sustituye por la figura del documento, en su sitio)
-  let docN = 0;
+  // narrativa con marcadores {{dN}} donde estaba cada doc-box y {{iN}} donde
+  // estaba cada figura (el build los sustituye por documento/imagen, en su sitio)
+  let docN = 0, imgN = 0;
   const parts = [];
+  const storyImages = [];
   for (const seg of segments) {
     if (seg.type === 'doc') {
       docN++;
       parts.push(`{{d${docN}}}`);
     } else {
-      const t = cleanNarrative(seg.content);
+      const ex = extractNarrativeImages(seg.content, imgN);
+      imgN = ex.count;
+      storyImages.push(...ex.images);
+      const t = cleanNarrative(ex.text);
       if (t) parts.push(t);
     }
   }
@@ -536,11 +572,14 @@ function main() {
   const storyDir = path.join(CONTENT, 'stories', id);
   if (fs.existsSync(storyDir)) {
     if (!args.force) throw new Error(`Ya existe content/stories/${id} (usa --force para regenerar)`);
-    for (const f of ['story.md', 'cover.svg', 'story.pdf']) {
+    // story.pdf no se borra: puede ser una versión afinada a mano y el import
+    // la conserva salvo que se pase --pdf explícito
+    for (const f of ['story.md', 'cover.svg']) {
       const p = path.join(storyDir, f);
       if (fs.existsSync(p)) fs.rmSync(p);
     }
     fs.rmSync(path.join(storyDir, 'docs'), { recursive: true, force: true });
+    fs.rmSync(path.join(storyDir, 'imgs'), { recursive: true, force: true });
   }
   const docsDir = path.join(storyDir, 'docs');
   fs.mkdirSync(docsDir, { recursive: true });
@@ -602,11 +641,43 @@ function main() {
     }
   }
 
-  writeStoryMd({ dir: storyDir, title, volume, publish, summary, sequence, reveals, documents: docs.map((d) => ({ ...d, image: fs.existsSync(path.join(docsDir, `d${d.n}.png`)) ? `d${d.n}.png` : `d${d.n}.svg` })), body: narrative });
+  // imágenes de la narrativa: copia al story dir + entradas con metadatos
+  // provisionales (lugar y año se deciden editando story.md)
+  const imgDirs = [
+    path.resolve(ROOT, args['imgs-dir'] || '../../input/imgs'),
+    path.resolve(ROOT, args['maps-dir'] || '../../input/map_files')
+  ];
+  const imgPlace = args['img-place'] || (docs[0] && docs[0].places[0]) || null;
+  const imgYear = args['img-year'] != null ? parseInt(args['img-year'], 10) : (docs[0] ? docs[0].year : null);
+  const images = storyImages.map((im) => {
+    const rel = im.src.replace(/^(\.\.\/)+_Sources\//, '');
+    let srcFile = null;
+    for (const dir of imgDirs) {
+      for (const cand of [path.join(dir, rel), path.join(dir, rel.replace(/^(imgs|Maps)\//, ''))]) {
+        if (fs.existsSync(cand)) { srcFile = cand; break; }
+      }
+      if (srcFile) break;
+    }
+    if (!srcFile) throw new Error(`Imagen ${im.n}: no encuentro ${rel} (buscado en ${imgDirs.join(', ')})`);
+    const outRel = path.join('imgs', rel.replace(/^(imgs|Maps)\//, ''));
+    const outFile = path.join(storyDir, outRel);
+    fs.mkdirSync(path.dirname(outFile), { recursive: true });
+    fs.copyFileSync(srcFile, outFile);
+    return {
+      file: outRel.split(path.sep).join('/'),
+      alt: im.caption || `Imagen ${im.n} de la historia`,
+      width: im.width,
+      places: [imgPlace],
+      year: imgYear
+    };
+  });
 
-  console.log(`Importada ${id} (${docs.length} documentos, sequence ${sequence}, publish ${publish})`);
+  writeStoryMd({ dir: storyDir, title, volume, publish, summary, sequence, reveals, documents: docs.map((d) => ({ ...d, image: fs.existsSync(path.join(docsDir, `d${d.n}.png`)) ? `d${d.n}.png` : `d${d.n}.svg` })), images, body: narrative });
+
+  console.log(`Importada ${id} (${docs.length} documentos, ${images.length} imágenes, sequence ${sequence}, publish ${publish})`);
   console.log(`  pdf: ${pdfStatus}`);
   for (const r of results) console.log(`  d${r.n}: ${r.status.padEnd(10)} ${r.out}  [${r.label}, ${r.year}]`);
+  for (const im of images) console.log(`  ${im.file}  [${im.width ? im.width + '%' : 'ancho natural'}]`);
   console.log('\nSiguientes pasos:');
   console.log('  - revisa content/stories/' + id + '/story.md (labels, alt, summary)');
   console.log('  - npm test');

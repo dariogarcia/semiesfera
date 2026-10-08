@@ -82,11 +82,52 @@ documents:
     places:
       - deishe
     year: 480
+images:
+  - file: imgs/xunei_sopa/xunei_sopa_logo.jpeg
+    alt: Imagen promocional de un fabricante de comida preparada.
+    width: 40
+    places:
+      - lande-14
+    year: 480
+  - file: imgs/xunei_paso/xunei_paso3.png
+    alt: "\"El paso de la historia\" - Papha Naara 56 GC"
+    width: 85
+    places:
+      - lande-14
+    year: 480
+  - file: imgs/codo/final_elbow.jpeg
+    alt: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
+    width: 90
+    places:
+      - lande-14
+    year: 480
+  - file: imgs/interlande_map.png
+    alt: Mapa del lande de Taaku.
+    width: 50
+    places:
+      - lande-14
+    year: 480
+  - file: imgs/predator/predator7.jpeg
+    alt: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
+    width: 75
+    places:
+      - lande-14
+    year: 480
+  - file: imgs/xunei_coin/coin.jpeg
+    alt: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
+    width: 55
+    places:
+      - lande-14
+    year: 480
 ---
 
 ¡Alegría! Por fin ha llegado el dia. Hoy sí. Hoy toca revisar la historia más famosa de la semiesfera. La del intrépido explorador de Taaku, primero en pisar dos landes. Nada más y nada menos que el primer interlande. Quizá os suene su nombre de alguno de los libros, películas, videojuegos, llaveros, velas aromáticas y demás objetos de uso doméstico que ha protagonizado. Me refiero, por supuesto, a la leyenda de Xunei Thun. ¿Y quién mejor para introducir a nuestro personaje (¡como si hiciera falta!) que a los presidentes de su club de fans? Exacto, veamos que nos cuentan  de Xunei los historiadores de Taaku de finales del Siglo 5.
 
+{{i1}}
+
 {{d1}}
+
+{{i2}}
 
 De pequeño me solía preguntar ¿Qué hay que hacer para que te recuerden como un titan de cincuenta kilómetros de altura? La respuesta de libro siempre era "tener una enorme capacidad de sacrificio, y una ambición capaz de doblegar al mismo destino". Lástima que solo pueda haber un primer interlande.
 
@@ -104,7 +145,9 @@ Victimismo, deshumanización, landismo... ¿Dónde he visto esto yo antes? Ah s�
 
 {{d6}}
 
-A lo largo de una década en el cargo, Xunei alcanzó excepcionales cotas de corrupción y egolatría, llegando a niveles considerados como escandalosos para una monarca absolutista. Logros que le valieron una caída en desgracia que debió ser el tema favorito de las conversaciones de la corte durante meses. El gestor de una de las principales fuentes de riqueza del lande y amigo personal del Rey, desterrado como supervisor de condenados a trabajos forzados. A tres mil metros de altura, en eterna sequía y constante estado de congelación. Habitado únicamente por soldados y criminales, y en mayor proporción, por soldados criminales. Donde nadie está por voluntad propia. Donde no se duerme tranquilo. Sin duda, Xunei no encontró allí nada que quisiera conocer, y aún así logró sobrevivir varios años. Un hecho que, debió causar enorme frustración en las casas de apuestas de la capital.
+{{i3}}
+
+ A lo largo de una década en el cargo, Xunei alcanzó excepcionales cotas de corrupción y egolatría, llegando a niveles considerados como escandalosos para una monarca absolutista. Logros que le valieron una caída en desgracia que debió ser el tema favorito de las conversaciones de la corte durante meses. El gestor de una de las principales fuentes de riqueza del lande y amigo personal del Rey, desterrado como supervisor de condenados a trabajos forzados. A tres mil metros de altura, en eterna sequía y constante estado de congelación. Habitado únicamente por soldados y criminales, y en mayor proporción, por soldados criminales. Donde nadie está por voluntad propia. Donde no se duerme tranquilo. Sin duda, Xunei no encontró allí nada que quisiera conocer, y aún así logró sobrevivir varios años. Un hecho que, debió causar enorme frustración en las casas de apuestas de la capital.
 
 {{d7}}
 
@@ -113,6 +156,8 @@ A lo largo de una década en el cargo, Xunei alcanzó excepcionales cotas de cor
 Este es, sin duda, su momento más bajo. Cuando ya extendía los brazos para abrazar el olvido. Y este es, también, el momento en el que cae del cielo y sobre sus manos abiertas, un regalo inconcebible, cortesía de la Denenita.
 
 {{d9}}
+
+{{i4}}
 
 Xunei ya no enviaba cartas. Dedicaba sus días a preguntarse si tendría tiempo de volverse loco antes de morir, y poco más. Una pregunta que es tanto un drama personal como su propia respuesta. Y en estas andaba cuando un soldado cualquiera llamó a su puerta, para informarle que el Gremio le quería contar una historia fantástica. Al otro lado de la puerta, podemos imaginar a un Xunei poseído por la soledad y la paranoia. Pidiéndole a la sumontaña que baje la voz, mientras abre. ¿Qué esperar de alguien así, puesto al frente del mayor descubrimiento de la historia de la semiesfera? Un triple salto mortal sobre el vacío desconocido e implacable.
 
@@ -124,8 +169,12 @@ Casi toda la mitología de Xunei Thun surge de esta carta, interpretada durante 
 
 Menudo final para el primer interlande. ¿O quizás fue el segundo interlande? O el tercero, o el cuarto. A saber. Muy probablemente el primer interlande fue algún minero anónimo suficientemente curioso como para cruzar el umbral. Eso sí, nadie podrá quitarle a Xunei el derecho a ostentar un título igualmente singular: el del primer interlande devorado por un animal salvaje. Qué menos que reconocerle ese mérito.
 
+{{i5}}
+
 {{d12}}
 
 Esta sería, así rápido y por encima, la historia de la historia de Xunei Thun. Nacido en la cima y derrotado por su propia incompetencia. Víctima de un depredador ya extinto. Herramienta de desaprensivos y fanáticos. Musa de los creativos del marketing, y literalmente (figuradamente), ingrediente perfecto de un anuncio de comida instantánea.
+
+{{i6}}
 
 **FIN**

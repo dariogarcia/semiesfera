@@ -71,6 +71,8 @@ Banderas útiles:
 | `--publish 2026-11-01`  | Fecha de publicación                                          |
 | `--no-render`           | Solo `story.md` + marcadores SVG (rápido, para iterar texto)  |
 | `--pdf mi.pdf`          | Usar un PDF ya compilado en vez de compilar                   |
+| `--img-place lande-14`  | Lugar provisional de las imágenes de la narrativa             |
+| `--img-year 480`        | Año provisional de las imágenes (por defecto, el del doc 1)   |
 
 Notas: `--sequence` debe ser el siguiente entero libre (único, sin huecos).
 Fuentes Type1 `.pfb` (p. ej. URW Gothic) se sustituyen por su clon OpenType
@@ -212,6 +214,34 @@ en el original. El importador deja un marcador `{{dN}}` en el cuerpo de
 figura del documento. Al escribir `story.md` a mano, coloca los marcadores
 donde toque; un documento sin marcador cae en la lista «Documentos» al
 final de la página.
+
+### 3.4bis Imágenes de la narrativa
+
+Las figuras (`\begin{figure}`, `wrapfigure`, `\includegraphics` suelto) del
+texto también viajan a la web: el importador deja un marcador `{{iN}}` en su
+sitio, copia el archivo a `content/stories/<id>/imgs/` y escribe un bloque
+`images:` en `story.md`:
+
+```yaml
+images:
+  - file: imgs/moneda.jpeg     # dentro del directorio de la historia
+    alt: Oblato de Taaku del siglo 3.   # sale de \caption si lo hay
+    width: 55                  # % del ancho de columna (del \includegraphics)
+    places:                    # metadatos: edita aquí lugar y año
+      - lande-14
+    year: 480
+```
+
+Las imágenes son documentos visuales de pleno derecho: aparecen en el texto
+en su posición, en el panel de documentos, en la línea de tiempo y en el
+lector, y se filtran por lugar y año como cualquier documento. El importador
+les pone un `places`/`year` provisional (`--img-place`, `--img-year`); la
+decisión fina se hace editando `story.md` a mano y recompilando con
+`node build.mjs`.
+
+Los archivos fuente se buscan en `input/imgs/` (y `input/map_files/` para
+mapas): el importador resuelve las rutas `../../_Sources/...` del original.
+Guarda allí solo las imágenes usadas en la historia.
 
 ### 3.5 Renderiza la imagen de cada documento
 

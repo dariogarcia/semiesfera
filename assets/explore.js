@@ -796,7 +796,8 @@
     var i = list.findIndex(function (x) { return x.id === d.id; });
     dom.readerImg.src = S.u(d.image);
     dom.readerImg.alt = d.alt;
-    dom.readerCaption.innerHTML = 'Parte de <em>' + S.esc(d.storyTitle) + '</em>, documento ' + (i + 1) + ' de ' + list.length;
+    dom.readerCaption.innerHTML = 'Parte de <em>' + S.esc(d.storyTitle) + '</em>, ' +
+      (d.kind === 'image' ? 'imagen ' : 'documento ') + (i + 1) + ' de ' + list.length;
     dom.readerPrev.disabled = i <= 0;
     dom.readerNext.disabled = i >= list.length - 1;
   }
@@ -994,7 +995,7 @@
     var html = '';
     list.forEach(function (d) {
       var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-      html += '<li class="dp-entry" data-dp-doc="' + S.esc(d.id) + '">' +
+      html += '<li class="dp-entry' + (d.kind === 'image' ? ' dp-image' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
         '<button type="button" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
         '<span class="dp-year">' + S.esc(span) + '</span>' +
         '<span class="dp-label">' + S.esc(d.label) + '</span>' +
