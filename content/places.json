@@ -1,7 +1,7 @@
 {
   "places": [
     {
-      "id": "lande-14",
+      "id": "taaku",
       "name": "Taaku",
       "geometry": {
         "type": "poly",
@@ -3731,7 +3731,7 @@
     },
     {
       "id": "lande-18",
-      "name": "Lande 18",
+      "name": "Soomga",
       "geometry": {
         "type": "poly",
         "contours": [
@@ -5646,7 +5646,7 @@
     },
     {
       "id": "lande-19",
-      "name": "Lande 19",
+      "name": "Ergati",
       "geometry": {
         "type": "poly",
         "contours": [
@@ -6615,7 +6615,7 @@
     },
     {
       "id": "lande-20",
-      "name": "Lande 20",
+      "name": "Wek'ah",
       "geometry": {
         "type": "poly",
         "contours": [
@@ -9666,19 +9666,9 @@
       }
     },
     {
-      "id": "taaku",
-      "name": "Taaku",
-      "parent": "lande-14",
-      "geometry": {
-        "type": "point",
-        "x": 1254.9,
-        "y": 213.6
-      }
-    },
-    {
       "id": "deishe",
       "name": "Deishe",
-      "parent": "lande-14",
+      "parent": "taaku",
       "geometry": {
         "type": "point",
         "x": 1105.4,
@@ -9688,7 +9678,7 @@
     {
       "id": "kalts-een",
       "name": "Kalts'een",
-      "parent": "lande-14",
+      "parent": "taaku",
       "geometry": {
         "type": "point",
         "x": 1165.4,
@@ -9698,7 +9688,7 @@
     {
       "id": "etaan",
       "name": "Etaan",
-      "parent": "lande-14",
+      "parent": "taaku",
       "geometry": {
         "type": "point",
         "x": 1263.1,
