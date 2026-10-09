@@ -7,7 +7,7 @@
   var S = window.SEMI;
   var NS = 'http://www.w3.org/2000/svg';
 
-  var TLW = 1000, TLH = 150, PLOT_H = 106, PAD = 42;
+  var TLW = 1000, TLH = 150, PLOT_H = 106, PAD = 42, TL_MIN = -500, TL_MAX = 1000;
   var DOMAIN = { d0: 0, d1: 1 };
 
   var state = {
@@ -393,8 +393,15 @@
     var min = Math.min.apply(null, years);
     var max = Math.max.apply(null, years);
     var pad = Math.max(2, (max - min) * 0.1);
-    DOMAIN.d0 = min - pad;
-    DOMAIN.d1 = max + pad;
+    DOMAIN.d0 = Math.max(min - pad, TL_MIN);
+    DOMAIN.d1 = Math.min(max + pad, TL_MAX);
+    if (DOMAIN.d1 <= DOMAIN.d0) { DOMAIN.d0 = TL_MIN; DOMAIN.d1 = TL_MAX; }
+  }
+
+  function clampDomain() {
+    DOMAIN.d0 = Math.max(DOMAIN.d0, TL_MIN);
+    DOMAIN.d1 = Math.min(DOMAIN.d1, TL_MAX);
+    if (DOMAIN.d1 <= DOMAIN.d0) { DOMAIN.d0 = TL_MIN; DOMAIN.d1 = TL_MAX; }
   }
 
   function xOf(year) { return PAD + ((year - DOMAIN.d0) / (DOMAIN.d1 - DOMAIN.d0)) * (TLW - 2 * PAD); }
@@ -408,6 +415,7 @@
     var center = DOMAIN.d0 + frac * span;
     DOMAIN.d0 = center - frac * span2;
     DOMAIN.d1 = DOMAIN.d0 + span2;
+    clampDomain();
     renderTimeline();
   }
 
@@ -503,7 +511,7 @@
       ? 'Ningún documento encaja con el filtro.'
       : 'La línea de tiempo se llenará con los documentos de las historias que leas.';
     dom.tlEmpty.hidden = !empty;
-    dom.tlSvg.style.display = empty ? 'none' : '';
+    dom.tlSvg.style.display = hasDocs ? '' : 'none';
   }
 
   function drawDocItem(item) {
@@ -602,6 +610,7 @@
         var shift = -(x - tlDrag.x) * yearsPerUnit;
         DOMAIN.d0 = tlDrag.d0 + shift;
         DOMAIN.d1 = tlDrag.d1 + shift;
+        clampDomain();
         renderTimeline();
         return;
       }
@@ -831,8 +840,10 @@
     var i = list.findIndex(function (x) { return x.id === d.id; });
     dom.readerImg.src = S.u(d.image);
     dom.readerImg.alt = d.alt;
-    dom.readerCaption.innerHTML = 'Parte de <em>' + S.esc(d.storyTitle) + '</em>, ' +
-      (d.kind === 'image' ? 'imagen ' : 'documento ') + (i + 1) + ' de ' + list.length;
+    dom.readerCaption.innerHTML =
+      (d.caption ? '<p class="reader-caption-text">' + S.esc(d.caption) + '</p>' : '') +
+      '<p class="reader-caption-meta">Parte de <em>' + S.esc(d.storyTitle) + '</em>, ' +
+      (d.kind === 'image' ? 'imagen ' : 'documento ') + (i + 1) + ' de ' + list.length + '</p>';
     dom.readerPrev.disabled = i <= 0;
     dom.readerNext.disabled = i >= list.length - 1;
   }

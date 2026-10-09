@@ -34,8 +34,8 @@ function unquote(s) {
 
 function scalar(v) {
   v = v.trim();
-  if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1);
-  if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1);
+  if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1).replace(/''/g, "'");
   if (/^-?\d+$/.test(v)) return parseInt(v, 10);
   if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
   if (v === 'true' || v === 'false') return v === 'true';

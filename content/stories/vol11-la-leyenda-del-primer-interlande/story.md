@@ -98,36 +98,42 @@ documents:
 images:
   - file: imgs/xunei_sopa/xunei_sopa_logo.jpeg
     alt: Imagen promocional de un fabricante de comida preparada.
+    caption: Imagen promocional de un fabricante de comida preparada.
     width: 40
     places:
       - taaku
     year: 938
   - file: imgs/xunei_paso/xunei_paso3.png
     alt: "\"El paso de la historia\" - Papha Naara 56 GC"
+    caption: "\"El paso de la historia\" - Papha Naara 56 GC"
     width: 85
     places:
       - etaan
     year: 56
   - file: imgs/codo/final_elbow.jpeg
     alt: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
+    caption: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
     width: 90
     places:
       - etaan
     year: 35
   - file: imgs/interlande_map.png
     alt: Mapa del lande de Taaku.
+    caption: Mapa del lande de Taaku.
     width: 50
     places:
       - taaku
     year: 0
   - file: imgs/predator/predator7.jpeg
     alt: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
+    caption: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
     width: 75
     places:
       - lande-21
     year: 925
   - file: imgs/xunei_coin/coin.jpeg
     alt: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
+    caption: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
     width: 55
     places:
       - taaku

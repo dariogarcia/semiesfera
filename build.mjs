@@ -116,6 +116,7 @@ for (const id of fs.readdirSync(storiesDir).sort()) {
       const where = `stories/${id}, imagen ${i + 1}`;
       if (typeof im.file !== 'string' || !fs.existsSync(path.join(dir, im.file))) fail(`${where}: no existe el archivo ${im.file}`);
       if (typeof im.alt !== 'string' || !im.alt.trim()) fail(`${where}: falta "alt"`);
+      if (im.caption != null && typeof im.caption !== 'string') fail(`${where}: "caption" debe ser texto`);
       if (im.width != null && (typeof im.width !== 'number' || im.width < 1 || im.width > 100)) fail(`${where}: "width" debe ser un porcentaje 1-100`);
       if (!Array.isArray(im.places) || !im.places.length) fail(`${where}: "places" debe ser una lista no vacía`);
       else for (const pid of im.places) if (!placeById.has(pid)) fail(`${where}: lugar desconocido "${pid}"`);
@@ -225,6 +226,7 @@ function storyRecord(s) {
     kind: 'image',
     image: `stories/${s.id}/${im.file}`,
     alt: im.alt,
+    caption: im.caption ?? null,
     label: `Imagen ${i + 1}`,
     places: im.places,
     year: im.year,
@@ -255,7 +257,7 @@ function storyRecord(s) {
     const d = t === 'd' ? docs[Number(n) - 1] : imgs[Number(n) - 1];
     if (!d) fail(`stories/${s.id}: el cuerpo referencia {{${t}${n}}} pero solo hay ${docs.length} documentos y ${imgs.length} imágenes`);
     const style = d.width ? ` style="max-width:${d.width}%"` : '';
-    return `<figure class="doc${t === 'i' ? ' image' : ''}" data-doc-id="${d.id}" data-doc-src="${d.image}"${style}><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span></figcaption></figure>`;
+    return `<figure class="doc${t === 'i' ? ' image' : ''}" data-doc-id="${d.id}" data-doc-src="${d.image}"${style}><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span>${d.caption ? `<span class="doc-caption">${escapeHtml(d.caption)}</span>` : ''}</figcaption></figure>`;
   });
   const storyEras = eras.filter((era) =>
     all.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
@@ -359,7 +361,7 @@ function storyMain(s, rec) {
         <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
         <figcaption>
           <span class="doc-label">${escapeHtml(d.label)}</span>
-          <span class="doc-meta" data-doc-meta hidden></span>
+          <span class="doc-meta" data-doc-meta hidden></span>${d.kind === 'image' && d.caption ? `\n          <span class="doc-caption">${escapeHtml(d.caption)}</span>` : ''}
         </figcaption>
       </figure>`;
 

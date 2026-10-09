@@ -483,7 +483,7 @@ documents:
 ${docYaml.join('\n')}
 images:
 ${story.images.map((im) => `  - file: ${im.file}
-    alt: ${yamlScalar(im.alt)}${im.width != null ? `\n    width: ${im.width}` : ''}
+    alt: ${yamlScalar(im.alt)}${im.caption ? `\n    caption: ${yamlScalar(im.caption)}` : ''}${im.width != null ? `\n    width: ${im.width}` : ''}
     places:
 ${im.places.map((p) => `      - ${p}`).join('\n')}
     year: ${im.year}`).join('\n')}
@@ -666,6 +666,7 @@ function main() {
     return {
       file: outRel.split(path.sep).join('/'),
       alt: im.caption || `Imagen ${im.n} de la historia`,
+      caption: im.caption || '',
       width: im.width,
       places: [imgPlace],
       year: imgYear
