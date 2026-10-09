@@ -331,13 +331,13 @@ ${script ? `<script src="${p}assets/${script}.js"></script>` : ''}
 function landingMain() {
   return `<main class="landing">
   <div class="landing-inner">
-    <p class="landing-kicker">Semiesfera</p>
-    <h1>Un mundo que se revela al leer</h1>
-    <p class="landing-lead">Semiesfera es un ciclo de historias sobre un mundo que empieza sin mapa. Cada relato añade una pieza al mapa, lugares a la geografía y fechas a la línea de tiempo. Nada se enseña antes de tiempo: el mundo existe en la medida en que lo has leído.</p>
+    <h1>Semiesfera</h1>
+    <p class="landing-kicker">Un mundo de historias por revelar</p>
+    <p class="landing-lead">La Semiesfera es un ciclo de historias sobre un mundo nuevo. Cada relato añade una pieza del espacio y del tiempo, abriéndose ante el lector de manera interactiva.</p>
     <ol class="landing-steps">
       <li>
-        <h2>Lee en orden</h2>
-        <p>Las historias se abren de una en una. Al principio solo la primera está disponible; el resto espera su turno.</p>
+        <h2>Lee</h2>
+        <p>Avanza a tu ritmo y siguiendo tus intereses.*</p>
       </li>
       <li>
         <h2>Marca lo leído</h2>
@@ -348,6 +348,7 @@ function landingMain() {
         <p>Navega el mapa y el tiempo a tu aire. Cada documento enlaza su lugar y su fecha, y cada lugar recuerda sus documentos.</p>
       </li>
     </ol>
+    <p class="landing-note">*en función de disponibilidad</p>
     <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
     <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
   </div>

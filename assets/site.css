@@ -85,37 +85,41 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
     var(--sea);
 }
 .landing-inner { max-width: 640px; text-align: center; }
+.landing h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(52px, 9vw, 78px);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+}
 .landing-kicker {
   font-family: var(--font-serif);
-  font-size: 15px;
-  letter-spacing: 6px;
+  font-size: 16px;
+  letter-spacing: 5px;
   text-transform: uppercase;
   color: var(--accent);
-  margin: 0 0 18px;
-}
-.landing h1 {
-  font-size: clamp(34px, 6vw, 52px);
-  margin: 0 0 18px;
+  margin: 0 0 26px;
 }
 .landing-lead { color: var(--text-dim); font-size: 18px; line-height: 1.65; margin: 0 auto 36px; max-width: 560px; }
 
 .landing-steps {
   list-style: none;
-  margin: 0 0 40px;
+  margin: 0 0 6px;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 10px;
   text-align: left;
 }
 .landing-steps li {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(16, 26, 36, 0.72);
-  padding: 16px;
+  padding: 11px 12px;
 }
-.landing-steps h2 { font-size: 17px; margin: 0 0 6px; color: var(--accent); }
-.landing-steps p { margin: 0; color: var(--text-dim); font-size: 14px; line-height: 1.55; }
+.landing-steps h2 { font-size: 15px; margin: 0 0 4px; color: var(--accent); }
+.landing-steps p { margin: 0; color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+.landing-note { color: var(--text-dim); font-size: 12px; margin: 0 0 34px; }
 
 .landing-cta { margin: 0 0 32px; }
 .landing-enter {
