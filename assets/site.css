@@ -55,18 +55,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .btn.small { padding: 4px 10px; font-size: 13px; }
 .btn:disabled { opacity: 0.5; cursor: default; }
 
-.link-btn {
-  background: none;
-  border: 0;
-  padding: 0;
-  color: var(--text-dim);
-  font-size: inherit;
-  font-family: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.link-btn:hover { color: var(--accent); }
-
 .icon-btn {
   background: transparent;
   border: 1px solid var(--line);
@@ -381,7 +369,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   padding: 8px 16px;
   text-align: right;
 }
-.sp-foot .link-btn { font-size: 12px; }
 
 /* -- panel de documentos (lado derecho) ------------------------------------------------ */
 

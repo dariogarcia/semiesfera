@@ -344,7 +344,7 @@ function landingMain() {
       </li>
     </ol>
     <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
-    <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="link-btn" data-reset-progress>Reiniciar mi progreso</button></p>
+    <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
   </div>
 </main>`;
 }
@@ -459,7 +459,7 @@ const exploreMain = `<main class="explore" data-explore>
       <ol class="sp-list" data-sp-list></ol>
     </div>
     <div class="sp-foot">
-      <button type="button" class="link-btn" data-reset-progress>Reiniciar mi progreso</button>
+      <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button>
     </div>
   </aside>
   <aside class="docs-panel" aria-label="Documentos">
