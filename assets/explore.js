@@ -231,12 +231,12 @@
     });
     dom.world.appendChild(svg);
 
-    // las regiones se dibujan primero: su círculo con relleno debe quedar
-    // por debajo de los puntos que contiene, o el cursor sobre un punto
-    // (p. ej. deishe dentro de markland) lo capturaría la región
+    // las regiones se dibujan primero: su polígono debe quedar por debajo
+    // de los puntos que contiene, o el clic en un punto (p. ej. deishe
+    // dentro de lande-14) lo capturaría la región
     var placeList = Array.from(state.places.values());
     placeList.sort(function (a, b) {
-      return (a.geometry.type === 'circle' ? 0 : 1) - (b.geometry.type === 'circle' ? 0 : 1);
+      return (a.geometry.type === 'point' ? 1 : 0) - (b.geometry.type === 'point' ? 1 : 0);
     });
     placeList.forEach(function (place) {
       var count = docsAtPlace(place.id).length;
@@ -299,8 +299,14 @@
           dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1,
           k: view.k
         };
+        // en el pellizco sí conviene capturar desde el principio
+        pointers.forEach(function (_, id) {
+          try { dom.viewport.setPointerCapture(id); } catch (err) { /* ignora */ }
+        });
       }
-      try { dom.viewport.setPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+      // nota: no se captura el puntero aquí. La captura retargetea el click
+      // al viewport y los clics en puntos del mapa dejarían de funcionar;
+      // se captura más abajo, cuando el gesto se convierte en arrastre.
     });
 
     dom.viewport.addEventListener('pointermove', function (e) {
@@ -320,7 +326,13 @@
       }
       if (drag && pointers.size === 1) {
         var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-        if (Math.abs(dx) + Math.abs(dy) > 4) mapDragged = true;
+        if (Math.abs(dx) + Math.abs(dy) > 4) {
+          if (!mapDragged) {
+            // arrastre real: a partir de aquí sí conviene capturar el puntero
+            try { dom.viewport.setPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+          }
+          mapDragged = true;
+        }
         view.tx = drag.tx + dx;
         view.ty = drag.ty + dy;
         applyTransform();
@@ -334,6 +346,14 @@
     }
     dom.viewport.addEventListener('pointerup', endPointer);
     dom.viewport.addEventListener('pointercancel', endPointer);
+    // un puntero sin capturar que sale del viewport y se suelta fuera no
+    // genera pointerup aquí: limpiarlo evita fingir un pellizco después
+    dom.viewport.addEventListener('pointerleave', function (e) {
+      if (!pointers.has(e.pointerId)) return;
+      var captured = false;
+      try { captured = dom.viewport.hasPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+      if (!captured) endPointer(e);
+    });
 
     dom.viewport.addEventListener('wheel', function (e) {
       e.preventDefault();
@@ -561,7 +581,9 @@
         d0: DOMAIN.d0, d1: DOMAIN.d1,
         band: null
       };
-      try { dom.tlSvg.setPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+      // sin captura inmediata: retargetea el click al svg y los clics en
+      // documentos/clústeres dejarían de funcionar; se captura en el
+      // primer movimiento significativo (abajo)
     });
 
     dom.tlSvg.addEventListener('pointermove', function (e) {
@@ -569,6 +591,11 @@
       var rect = dom.tlSvg.getBoundingClientRect();
       var scale = rect.width / TLW || 1;
       var x = (e.clientX - rect.left) / scale;
+
+      if (Math.abs(x - tlDrag.x) > 4 && !tlDrag.captured) {
+        tlDrag.captured = true;
+        try { dom.tlSvg.setPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+      }
 
       if (tlDrag.mode === 'pan') {
         var yearsPerUnit = (tlDrag.d1 - tlDrag.d0) / (TLW - 2 * PAD);
@@ -614,6 +641,14 @@
     }
     dom.tlSvg.addEventListener('pointerup', endTlDrag);
     dom.tlSvg.addEventListener('pointercancel', endTlDrag);
+    // un puntero sin capturar que sale del svg y se suelta fuera no genera
+    // pointerup aquí: cerrar el arrastre evita bandas huérfanas
+    dom.tlSvg.addEventListener('pointerleave', function (e) {
+      if (!tlDrag) return;
+      var captured = false;
+      try { captured = dom.tlSvg.hasPointerCapture(e.pointerId); } catch (err) { /* ignora */ }
+      if (!captured) endTlDrag(e);
+    });
 
     // doble clic en el fondo: volver al dominio completo
     dom.tlSvg.addEventListener('dblclick', function (e) {
