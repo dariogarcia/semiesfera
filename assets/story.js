@@ -8,6 +8,7 @@
   var PAGE = window.SEMI_PAGE;
 
   function el(sel) { return document.querySelector(sel); }
+  var svgEl = S.svgEl;
 
   // -- minimapa -----------------------------------------------------------------
 
@@ -23,13 +24,8 @@
     });
     if (!record || !pieces.length) return;
 
-    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    pieces.forEach(function (p) {
-      x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y);
-      x1 = Math.max(x1, p.x + p.width); y1 = Math.max(y1, p.y + p.height);
-    });
-    var pad = 24;
-    x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+    var b = S.piecesBbox(pieces);
+    var x0 = b.x - 24, y0 = b.y - 24, x1 = b.x + b.w + 24, y1 = b.y + b.h + 24;
 
     var W = Math.max(container.clientWidth || 600, 200);
     var k = W / (x1 - x0);
@@ -50,28 +46,25 @@
       container.appendChild(img);
     });
 
-    var NS = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('viewBox', x0 + ' ' + y0 + ' ' + (x1 - x0) + ' ' + (y1 - y0));
-    svg.setAttribute('class', 'minimap-overlay');
-    svg.setAttribute('preserveAspectRatio', 'none');
+    var svg = svgEl('svg', {
+      viewBox: x0 + ' ' + y0 + ' ' + (x1 - x0) + ' ' + (y1 - y0),
+      class: 'minimap-overlay',
+      preserveAspectRatio: 'none'
+    });
     svg.style.width = '100%';
     svg.style.height = '100%';
 
     record.places.forEach(function (place) {
       var g = place.geometry;
       if (g.type === 'circle') {
-        var c = document.createElementNS(NS, 'circle');
-        c.setAttribute('cx', g.x); c.setAttribute('cy', g.y); c.setAttribute('r', g.radius);
-        c.setAttribute('class', 'region-circle faint');
-        svg.appendChild(c);
+        svgEl('circle', { cx: g.x, cy: g.y, r: g.radius, class: 'region-circle faint' }, svg);
       } else if (g.type === 'poly') {
-        var path = document.createElementNS(NS, 'path');
-        path.setAttribute('d', g.contours.map(function (pts) {
-          return 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
-        }).join(''));
-        path.setAttribute('class', 'region-poly faint');
-        svg.appendChild(path);
+        var path = svgEl('path', {
+          class: 'region-poly faint',
+          d: g.contours.map(function (pts) {
+            return 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
+          }).join('')
+        }, svg);
       }
     });
     var usedIds = {};
@@ -80,17 +73,9 @@
       if (!usedIds[place.id]) return;
       var g = place.geometry;
       if (g.type !== 'point') return;
-      var c = document.createElementNS(NS, 'circle');
-      c.setAttribute('cx', g.x); c.setAttribute('cy', g.y);
-      c.setAttribute('r', 6 / k);
-      c.setAttribute('class', 'place-dot');
-      svg.appendChild(c);
-      var label = document.createElementNS(NS, 'text');
-      label.setAttribute('x', g.x + 10 / k); label.setAttribute('y', g.y + 4 / k);
-      label.setAttribute('font-size', 13 / k);
-      label.setAttribute('class', 'place-label');
+      svgEl('circle', { cx: g.x, cy: g.y, r: 6 / k, class: 'place-dot' }, svg);
+      var label = svgEl('text', { x: g.x + 10 / k, y: g.y + 4 / k, 'font-size': 13 / k, class: 'place-label' }, svg);
       label.textContent = place.name;
-      svg.appendChild(label);
     });
 
     container.appendChild(svg);
@@ -104,48 +89,35 @@
     var H = 84;
     var pad = 26;
     container.innerHTML = '';
-    var NS = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    svg.setAttribute('width', '100%');
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%' });
     var domain = (to - from) || 1;
     var x = function (y) { return pad + ((y - from) / domain) * (W - 2 * pad); };
 
-    var axis = document.createElementNS(NS, 'line');
-    axis.setAttribute('x1', pad); axis.setAttribute('x2', W - pad);
-    axis.setAttribute('y1', 42); axis.setAttribute('y2', 42);
-    axis.setAttribute('class', 'tl-axis');
-    svg.appendChild(axis);
+    svgEl('line', { class: 'tl-axis', x1: pad, x2: W - pad, y1: 42, y2: 42 }, svg);
 
     [from, to].forEach(function (y, i) {
-      var t = document.createElementNS(NS, 'text');
-      t.setAttribute('x', i === 0 ? pad : W - pad);
-      t.setAttribute('y', 66);
-      t.setAttribute('text-anchor', i === 0 ? 'start' : 'end');
-      t.setAttribute('class', 'tl-tick-label');
+      var t = svgEl('text', {
+        class: 'tl-tick-label',
+        x: i === 0 ? pad : W - pad,
+        y: 66,
+        'text-anchor': i === 0 ? 'start' : 'end'
+      }, svg);
       t.textContent = S.fmtYear(y);
-      svg.appendChild(t);
     });
 
     var color = S.storyColor(record.sequence);
     record.documents.forEach(function (d) {
       var y1 = d.year, y2 = d.yearEnd != null ? d.yearEnd : d.year;
       if (y2 > y1) {
-        var bar = document.createElementNS(NS, 'line');
-        bar.setAttribute('x1', x(y1)); bar.setAttribute('x2', x(y2));
-        bar.setAttribute('y1', 42); bar.setAttribute('y2', 42);
-        bar.setAttribute('stroke', color);
-        bar.setAttribute('stroke-width', 6);
-        bar.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(bar);
+        svgEl('line', {
+          x1: x(y1), x2: x(y2), y1: 42, y2: 42,
+          stroke: color, 'stroke-width': 6, 'stroke-linecap': 'round'
+        }, svg);
       }
-      var pt = document.createElementNS(NS, 'circle');
-      pt.setAttribute('cx', x(y1)); pt.setAttribute('cy', 42);
-      pt.setAttribute('r', 5.5);
-      pt.setAttribute('fill', color);
-      pt.setAttribute('stroke', '#101820');
-      pt.setAttribute('stroke-width', 1.5);
-      svg.appendChild(pt);
+      svgEl('circle', {
+        cx: x(y1), cy: 42, r: 5.5,
+        fill: color, stroke: '#101820', 'stroke-width': 1.5
+      }, svg);
     });
 
     container.appendChild(svg);
@@ -181,21 +153,6 @@
     if (notice) notice.hidden = true;
     if (content) content.hidden = false;
 
-    // etiquetas de lugar y año en los documentos
-    var names = PAGE.placeNames || {};
-    document.querySelectorAll('.doc').forEach(function (li) {
-      var docId = li.getAttribute('data-doc-id');
-      var doc = PAGE.docs.filter(function (d) { return d.id === docId; })[0];
-      var meta = li.querySelector('[data-doc-meta]');
-      if (!doc || !meta) return;
-      if (state === 'read') {
-        meta.textContent = S.docMetaText(doc, names);
-        meta.hidden = false;
-      } else {
-        meta.hidden = true;
-      }
-    });
-
     if (markBtn) {
       if (state === 'read') {
         markBtn.disabled = true;
@@ -227,13 +184,7 @@
       var btn = e.target.closest('[data-mark-read]');
       if (!btn || btn.disabled) return;
       var id = btn.getAttribute('data-id');
-      S.markRead(id);
-      S.fetchStoryData(id).then(function (data) {
-        S.toast('Historia marcada como leída: ' + S.revealMessage(data) + '.');
-      }).catch(function () {
-        S.toast('Historia marcada como leída.');
-      });
-      applyReadState();
+      S.markReadAndNotify(id, applyReadState);
     });
   });
 })();

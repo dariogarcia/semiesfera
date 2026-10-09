@@ -5,9 +5,8 @@
   'use strict';
 
   var S = window.SEMI;
-  var NS = 'http://www.w3.org/2000/svg';
 
-  var TLW = 1000, TLH = 150, PLOT_H = 106, PAD = 42, TL_MIN = -500, TL_MAX = 1000;
+  var TLW = 1000, PLOT_H = 106, PAD = 42, TL_MIN = -500, TL_MAX = 1000;
   var DOMAIN = { d0: 0, d1: 1 };
 
   var state = {
@@ -39,12 +38,7 @@
 
   // -- utilidades ---------------------------------------------------------------
 
-  function svgEl(tag, attrs, parent) {
-    var e = document.createElementNS(NS, tag);
-    for (var k in attrs) e.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(e);
-    return e;
-  }
+  var svgEl = S.svgEl;
 
   function findDoc(id) {
     for (var i = 0; i < state.docs.length; i++) if (state.docs[i].id === id) return state.docs[i];
@@ -67,20 +61,25 @@
     return null;
   }
 
+  var byYear = function (a, b) { return a.year - b.year || a.sequence - b.sequence; };
+
   function buildAllDocs(index) {
     state.allDocs = [];
     index.stories.forEach(function (s) {
       (s.documents || []).forEach(function (d) { state.allDocs.push(d); });
     });
-    state.allDocs.sort(function (a, b) { return a.year - b.year || a.sequence - b.sequence; });
+    state.allDocs.sort(byYear);
+  }
+
+  // ¿solapa el documento (que puede abarcar años) un periodo?
+  function inRange(d, range) {
+    var y2 = d.yearEnd != null ? d.yearEnd : d.year;
+    return d.year <= range.to && y2 >= range.from;
   }
 
   function visibleDocs() {
     if (!state.range) return state.docs;
-    return state.docs.filter(function (d) {
-      var y2 = d.yearEnd != null ? d.yearEnd : d.year;
-      return d.year <= state.range.to && y2 >= state.range.from;
-    });
+    return state.docs.filter(function (d) { return inRange(d, state.range); });
   }
 
   // filtro activo: lugar seleccionado Y/O periodo — se aplica a la línea de
@@ -91,17 +90,23 @@
       var ids = new Set(docsAtPlace(state.sel.place).map(function (d) { return d.id; }));
       list = list.filter(function (d) { return ids.has(d.id); });
     }
-    if (state.range) {
-      list = list.filter(function (d) {
-        var y2 = d.yearEnd != null ? d.yearEnd : d.year;
-        return d.year <= state.range.to && y2 >= state.range.from;
-      });
-    }
+    if (state.range) list = list.filter(function (d) { return inRange(d, state.range); });
     return list;
   }
 
   function filterActive() {
     return !!(state.sel.place || state.range);
+  }
+
+  // tras cualquier cambio de filtro (lugar o periodo): URL, línea de tiempo,
+  // resaltados, chip del periodo y panel de documentos
+  function applyFilterChange(opts) {
+    opts = opts || {};
+    syncUrl();
+    renderTimeline();
+    updateHighlights(opts.scroll);
+    if (opts.chip) updateRangeChip();
+    renderDocsPanel();
   }
 
   function docsAtPlace(placeId) {
@@ -156,7 +161,7 @@
       });
       state.docs = state.docs.concat(f.documents);
     });
-    state.docs.sort(function (a, b) { return a.year - b.year || a.sequence - b.sequence; });
+    state.docs.sort(byYear);
     state.complete = state.pieces.length >= state.index.totalPieces;
   }
 
@@ -389,10 +394,7 @@
       if (e.target.closest('.place-g')) return;
       if (state.sel.place) {
         state.sel.place = null;
-        syncUrl();
-        renderTimeline();
-        updateHighlights();
-        renderDocsPanel();
+        applyFilterChange();
       }
     });
 
@@ -558,7 +560,7 @@
     }, dom.tlSvg);
     if (d.yearEnd != null && d.yearEnd > d.year) {
       svgEl('line', {
-        class: 'tl-bar', x1: xOf(d.year), x2: xOf(d.yearEnd), y1: 56, y2: 56,
+        x1: xOf(d.year), x2: xOf(d.yearEnd), y1: 56, y2: 56,
         stroke: color, 'stroke-width': 6, 'stroke-linecap': 'round'
       }, g);
     }
@@ -684,11 +686,7 @@
         var to = Math.ceil(Math.max(ya, yb));
         if (to - from < 1) to = from + 1;
         state.range = { from: from, to: to };
-        syncUrl();
-        renderTimeline();
-        updateHighlights();
-        updateRangeChip();
-        renderDocsPanel();
+        applyFilterChange({ chip: true });
       }
     }
     dom.tlSvg.addEventListener('pointerup', endTlDrag);
@@ -715,17 +713,7 @@
     if (!chip) return;
     if (!state.range) { chip.hidden = true; return; }
     chip.hidden = false;
-    chip.innerHTML = '';
-    var span = document.createElement('span');
-    span.textContent = S.fmtSpan(state.range.from, state.range.to);
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip-close';
-    btn.setAttribute('aria-label', 'Quitar el filtro de periodo');
-    btn.textContent = '×';
-    btn.addEventListener('click', clearRangeFilter);
-    chip.appendChild(span);
-    chip.appendChild(btn);
+    fillFilterChip(chip, S.fmtSpan(state.range.from, state.range.to), 'Periodo seleccionado', clearRangeFilter);
   }
 
   // -- resaltados ------------------------------------------------------------------
@@ -873,7 +861,6 @@
     if (!dom.reader) buildReader();
     updateReader();
     dom.reader.hidden = false;
-    document.body.classList.add('reader-open');
   }
 
   function updateReader() {
@@ -910,7 +897,6 @@
 
   function closeReader() {
     if (dom.reader) dom.reader.hidden = true;
-    document.body.classList.remove('reader-open');
     if (state.sel.doc) {
       state.sel.doc = null;
       syncUrl();
@@ -928,10 +914,7 @@
   function togglePlacePin(id) {
     if (state.sel.place === id) state.sel.place = null;
     else { state.sel.place = id; state.sel.doc = null; }
-    syncUrl();
-    renderTimeline();
-    updateHighlights(true);
-    renderDocsPanel();
+    applyFilterChange({ scroll: true });
   }
 
   function clearSelection() {
@@ -939,11 +922,7 @@
     state.sel.doc = null;
     state.range = null;
     closeReader();
-    syncUrl();
-    renderTimeline();
-    updateHighlights();
-    updateRangeChip();
-    renderDocsPanel();
+    applyFilterChange({ chip: true });
   }
 
   // -- URL como estado ---------------------------------------------------------------------
@@ -1058,10 +1037,10 @@
     });
   }
 
-  function makeFilterChip(text, title, onRemove) {
-    var chip = document.createElement('span');
-    chip.className = 'tl-range-chip';
+  // rellena un chip de filtro (texto + botón de quitar) en un elemento dado
+  function fillFilterChip(chip, text, title, onRemove) {
     chip.title = title;
+    chip.innerHTML = '';
     var t = document.createElement('span');
     t.textContent = text;
     var btn = document.createElement('button');
@@ -1075,21 +1054,20 @@
     return chip;
   }
 
+  function makeFilterChip(text, title, onRemove) {
+    var chip = document.createElement('span');
+    chip.className = 'tl-range-chip';
+    return fillFilterChip(chip, text, title, onRemove);
+  }
+
   function clearPlaceFilter() {
     state.sel.place = null;
-    syncUrl();
-    renderTimeline();
-    updateHighlights();
-    renderDocsPanel();
+    applyFilterChange();
   }
 
   function clearRangeFilter() {
     state.range = null;
-    syncUrl();
-    renderTimeline();
-    updateHighlights();
-    updateRangeChip();
-    renderDocsPanel();
+    applyFilterChange({ chip: true });
   }
 
   // -- filtros del panel de documentos ------------------------------------------------------
@@ -1135,10 +1113,7 @@
   function setPlaceFilter(id) {
     state.sel.place = id || null;
     if (state.sel.place) state.sel.doc = null;
-    syncUrl();
-    renderTimeline();
-    updateHighlights(true);
-    renderDocsPanel();
+    applyFilterChange({ scroll: true });
   }
 
   function applyYearInputs() {
@@ -1155,11 +1130,7 @@
       dom.yearFrom.value = from; dom.yearTo.value = to;
     }
     state.range = { from: from, to: to };
-    syncUrl();
-    renderTimeline();
-    updateHighlights();
-    updateRangeChip();
-    renderDocsPanel();
+    applyFilterChange({ chip: true });
   }
 
   // el select y los inputs reflejan el estado, venga del mapa, de la
@@ -1240,18 +1211,15 @@
   var PANELS_KEY = 'semiesfera.panels';
 
   function loadPanels() {
-    try {
-      var raw = localStorage.getItem(PANELS_KEY);
-      if (raw) {
-        var p = JSON.parse(raw);
-        if (typeof p.stories === 'boolean') state.panels.stories = p.stories;
-        if (typeof p.docs === 'boolean') state.panels.docs = p.docs;
-      }
-    } catch (e) { /* ignora */ }
+    var p = S.storageGet(PANELS_KEY, null);
+    if (p && typeof p === 'object') {
+      if (typeof p.stories === 'boolean') state.panels.stories = p.stories;
+      if (typeof p.docs === 'boolean') state.panels.docs = p.docs;
+    }
   }
 
   function savePanels() {
-    try { localStorage.setItem(PANELS_KEY, JSON.stringify(state.panels)); } catch (e) { /* ignora */ }
+    S.storageSet(PANELS_KEY, state.panels);
   }
 
   function applyPanels() {
@@ -1273,11 +1241,6 @@
   // -- lector de historia ----------------------------------------------------------------
 
   function storyReaderHTML(rec, isRead) {
-    var names = {};
-    rec.places.forEach(function (p) { names[p.id] = p.name; });
-    readerNames = names;
-    readerIsRead = isRead;
-
     var foot;
     if (!isRead) {
       foot = '<button type="button" class="btn primary" data-mark-read data-id="' + S.esc(rec.id) + '">Marcar como leída</button>';
@@ -1304,18 +1267,10 @@
       '</article>';
   }
 
-  var readerNames = {}, readerIsRead = false;
-
   function hydrateSheetDocs(rec) {
     dom.storyReader.querySelectorAll('.doc[data-doc-src]').forEach(function (fig) {
       var img = fig.querySelector('img');
       if (img) img.src = S.u(fig.getAttribute('data-doc-src'));
-      var meta = fig.querySelector('[data-doc-meta]');
-      var doc = rec.documents.filter(function (d) { return d.id === fig.getAttribute('data-doc-id'); })[0];
-      if (meta && doc && readerIsRead) {
-        meta.hidden = false;
-        meta.textContent = S.docMetaText(doc, readerNames);
-      }
     });
   }
 
@@ -1341,7 +1296,6 @@
       }
       fillStoryReader(rec);
       dom.storyReader.hidden = false;
-      document.body.classList.add('story-open');
     }).catch(function (err) {
       S.toast('No se pudo cargar la historia: ' + err.message);
     });
@@ -1350,7 +1304,6 @@
   function closeStoryReader() {
     if (!dom.storyReader) return;
     dom.storyReader.hidden = true;
-    document.body.classList.remove('story-open');
     state.readerStory = null;
   }
 
@@ -1384,18 +1337,14 @@
   function handleMarkRead(id) {
     var states = S.storyStates();
     if (states[id] === 'read') { S.toast('Ya habías marcado esta historia como leída.'); return; }
-    S.markRead(id);
-    S.fetchStoryData(id).then(function (rec) {
-      addRecordToState(rec);
-      refreshWorld();
+    S.markReadAndNotify(id, function (rec) {
+      if (rec) {
+        addRecordToState(rec);
+        refreshWorld();
+        if (state.readerStory === id) fillStoryReader(rec);
+      }
       renderStoriesPanel();
       renderDocsPanel();
-      if (state.readerStory === id) fillStoryReader(rec);
-      S.toast('Historia marcada como leída: ' + S.revealMessage(rec) + '.');
-    }).catch(function () {
-      renderStoriesPanel();
-      renderDocsPanel();
-      S.toast('Historia marcada como leída.');
     });
   }
 

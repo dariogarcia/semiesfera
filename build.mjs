@@ -315,7 +315,6 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true }
 <meta name="description" content="${escapeHtml(desc)}">
 <link rel="stylesheet" href="${p}assets/site.css">
 <link rel="alternate" type="application/rss+xml" title="Semiesfera" href="${p}rss.xml">
-<script>document.documentElement.classList.add('js');</script>
 <script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
 </head>
 <body>
@@ -384,13 +383,7 @@ ${leftovers.map(docFigure).join('\n')}
       </ol>
     </section>` : '';
 
-  const pageData = {
-    id: s.id,
-    placeNames: Object.fromEntries(rec.places.map((p) => [p.id, p.name])),
-    docs: rec.documents.map((d) => ({
-      id: d.id, places: d.places, year: d.year, yearEnd: d.yearEnd
-    }))
-  };
+  const pageData = { id: s.id };
 
   return `<main class="wrap story" data-story-id="${s.id}">
   <div class="locked-notice" data-locked-notice hidden>

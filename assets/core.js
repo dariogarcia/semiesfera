@@ -7,21 +7,39 @@
   var BASE = window.SEMI_BASE || '';
   var KEY = 'semiesfera.progress';
   var SEEN_KEY = 'semiesfera.seenPieces';
+  var NS = 'http://www.w3.org/2000/svg';
 
   function u(rel) { return BASE + rel; }
+
+  // -- utilidades -------------------------------------------------------------
+
+  function svgEl(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  function storageGet(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw == null ? fallback : JSON.parse(raw);
+    } catch (e) { return fallback; }
+  }
+
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* modo privado */ }
+  }
 
   // -- progreso -------------------------------------------------------------
 
   function loadProgress() {
-    try {
-      var raw = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (raw && typeof raw === 'object' && raw.read && typeof raw.read === 'object') return raw;
-    } catch (e) { /* almacenamiento corrupto: se ignora */ }
-    return { read: {} };
+    var raw = storageGet(KEY, null);
+    return raw && typeof raw === 'object' && raw.read && typeof raw.read === 'object' ? raw : { read: {} };
   }
 
   function saveProgress(p) {
-    try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* modo privado */ }
+    storageSet(KEY, p);
   }
 
   function getRead() { return loadProgress().read; }
@@ -103,12 +121,6 @@
       plural(rec.documents.length, 'documento', 'documentos');
   }
 
-  function docMetaText(d, names) {
-    var places = d.places.map(function (pid) { return names[pid] || pid; }).join(', ');
-    var span = d.yearEnd != null ? fmtSpan(d.year, d.yearEnd) : fmtYear(d.year);
-    return places + ' · ' + span;
-  }
-
   // -- datos (carga perezosa) --------------------------------------------------
 
   var dataCache = {};
@@ -175,30 +187,57 @@
   // -- piezas vistas (para el fundido de revelado) ------------------------------------
 
   function getSeenPieces() {
-    try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch (e) { return []; }
+    var v = storageGet(SEEN_KEY, []);
+    return Array.isArray(v) ? v : [];
   }
 
   function setSeenPieces(ids) {
-    try { localStorage.setItem(SEEN_KEY, JSON.stringify(ids)); } catch (e) { /* nada */ }
+    storageSet(SEEN_KEY, ids);
+  }
+
+  // caja que rodea un conjunto de piezas del mapa
+  function piecesBbox(pieces) {
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    pieces.forEach(function (p) {
+      x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y);
+      x1 = Math.max(x1, p.x + p.width); y1 = Math.max(y1, p.y + p.height);
+    });
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+
+  // -- marcar como leída (con aviso) ---------------------------------------------------
+
+  function markReadAndNotify(id, onDone) {
+    markRead(id);
+    fetchStoryData(id).then(function (rec) {
+      if (onDone) onDone(rec);
+      toast('Historia marcada como leída: ' + revealMessage(rec) + '.');
+    }).catch(function () {
+      if (onDone) onDone(null);
+      toast('Historia marcada como leída.');
+    });
   }
 
   window.SEMI = {
     u: u,
     getRead: getRead,
     markRead: markRead,
-    resetProgress: resetProgress,
     storyStates: storyStates,
     openStoryId: openStoryId,
     bySeq: bySeq,
     esc: esc,
+    svgEl: svgEl,
+    storageGet: storageGet,
+    storageSet: storageSet,
     storyColor: storyColor,
     fmtYear: fmtYear,
     fmtSpan: fmtSpan,
     revealMessage: revealMessage,
-    docMetaText: docMetaText,
+    piecesBbox: piecesBbox,
     fetchIndexData: fetchIndexData,
     fetchStoryData: fetchStoryData,
     loadUnlockedData: loadUnlockedData,
+    markReadAndNotify: markReadAndNotify,
     toast: toast,
     getSeenPieces: getSeenPieces,
     setSeenPieces: setSeenPieces

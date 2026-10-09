@@ -189,7 +189,7 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   max-height: 85vh; object-fit: contain; object-position: top center;
 }
 .doc-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-.doc figure { margin: 0; }
+figure.doc { margin: 0; }
 .doc img {
   width: 100%; height: auto; display: block;
   border-radius: 8px; border: 1px solid var(--line);
@@ -327,7 +327,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .tl-point { stroke: #101820; stroke-width: 1.5; }
 .tl-doc.lit .tl-point { stroke: #fff; r: 9; }
 .tl-cluster.lit .cluster-circle { stroke: #fff; stroke-width: 2; }
-.tl-doc.dimmed { opacity: 0.2; }
 .tl-cluster { cursor: pointer; }
 .cluster-circle { fill: #2b3c50; stroke: var(--text-dim); stroke-width: 1.5; }
 .cluster-count { fill: var(--text); font-size: 13px; font-family: var(--font-sans); }
@@ -446,7 +445,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 }
 .dp-entry:hover { opacity: 1; }
 .dp-entry.active, .dp-entry.lit { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); opacity: 1; }
-.dp-entry.dimmed { opacity: 0.3; }
 .dp-entry > button {
   display: flex; flex-direction: column; gap: 2px;
   width: 100%; text-align: left; cursor: pointer;
@@ -507,17 +505,6 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .sheet-links { margin: 0; display: flex; gap: 8px; flex-wrap: wrap; }
 
 .story-sheet-body { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 22px; }
-
-.doc-ref {
-  display: flex; gap: 10px; align-items: center; text-align: left;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-  padding: 8px 10px; cursor: pointer; width: 100%; color: var(--text);
-}
-.doc-ref:hover { border-color: var(--accent); }
-.doc-ref img { width: 52px; height: 66px; object-fit: cover; border-radius: 5px; background: #d8c8a2; display: block; flex: none; }
-.doc-ref-info { display: flex; flex-direction: column; min-width: 0; }
-.doc-ref-label { font-weight: 600; font-size: 14px; }
-.doc-ref-meta { color: var(--accent); font-size: 12px; }
 
 .story-sheet-foot {
   margin-top: 28px; border-top: 1px solid var(--line); padding-top: 18px;
