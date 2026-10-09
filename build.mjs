@@ -291,10 +291,6 @@ const indexData = {
   mapSize: mapData.size,
   totalPieces: mapData.pieces.length,
   complete: { file: mapData.complete.file, width: mapData.size.width, height: mapData.size.height },
-  // todos los lugares del mundo, para los filtros del panel de documentos:
-  // los landes que aún no revela ninguna historia leída también se pueden
-  // seleccionar (no mostrarán documentos hasta que existan)
-  places: [...placeById.values()].map((p) => ({ id: p.id, name: p.name, parent: p.parent ?? null, geometry: p.geometry })),
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
     summary: s.summary, cover: `stories/${s.id}/${s.cover}`,

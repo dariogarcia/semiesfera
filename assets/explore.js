@@ -464,7 +464,16 @@
       if (x2 - x1 < 4) return;
       svgEl('rect', { class: 'era-band' + (i % 2 ? ' alt' : ''), x: x1, y: 0, width: x2 - x1, height: PLOT_H }, svg);
       var t = svgEl('text', { class: 'era-label', x: x1 + 8, y: 18 }, svg);
-      t.textContent = era.name;
+      // si el nombre no cabe en su banda, se parte en dos líneas por el guion
+      if (era.name.indexOf(' - ') > 0 && era.name.length * 6.2 > x2 - x1 - 16) {
+        var parts = era.name.split(' - ');
+        var ts1 = svgEl('tspan', { x: x1 + 8, y: 14 }, t);
+        ts1.textContent = parts[0];
+        var ts2 = svgEl('tspan', { x: x1 + 8, y: 28 }, t);
+        ts2.textContent = parts[1];
+      } else {
+        t.textContent = era.name;
+      }
     });
 
     // banda de rango seleccionado
@@ -1055,6 +1064,11 @@
     if (!dom.placeSelect) return;
     var regions = [], points = {};
     state.places.forEach(function (p) {
+      // solo lugares descubiertos: dentro de una pieza ya revelada
+      var revealed = state.pieces.some(function (piece) {
+        return insidePiece(p.geometry, piece);
+      });
+      if (!revealed) return;
       if (p.geometry.type === 'point') {
         var key = p.parent || '';
         (points[key] = points[key] || []).push(p);
@@ -1310,10 +1324,7 @@
 
   function rebuildState() {
     state.pieces = [];
-    // sembrar con todos los lugares conocidos (index.json): los filtros
-    // pueden referirse a landes que ninguna historia leída ha revelado
     state.places = new Map();
-    (state.index.places || []).forEach(function (p) { state.places.set(p.id, p); });
     state.docs = [];
     state.eras = [];
     prepareData(state.files);

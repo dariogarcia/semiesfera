@@ -1,13 +1,10 @@
 eras:
-  - name: Antes del túnel
-    from: -200
-    to: -10
-  - name: Los años del túnel
-    from: -10
-    to: 0
-  - name: Después del túnel
+  - name: Pre gran conexión
+    from: -500
+    to: -1
+  - name: Gran conexión - Era de los landes
     from: 0
-    to: 100
-  - name: La era de los landes
-    from: 100
+    to: 300
+  - name: La era de la semiesfera
+    from: 301
     to: 1000
