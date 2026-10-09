@@ -11,55 +11,55 @@ reveals:
 documents:
   - image: docs/d1.png
     alt: Museo Xunei Thun de Arte, Taaku. Audioguía para visitantes.
-    label: Audioguía
+    label: Audioguía del Museo Xunei Thun
     places:
       - deishe
       - taaku
     year: 480
   - image: docs/d2.png
     alt: Cuerpo de Ciudadania, Gobierno de Taaku. Examen de Ciudadanía - Rúbrica de evaluación.
-    label: Examen
+    label: Examen de ciudadanía de Taaku
     places:
       - taaku
     year: 460
   - image: docs/d3.png
     alt: Panfleto de distribución pública. Manifiesto Noviembre Rosa.
-    label: Manifiesto
+    label: Manifiesto Noviembre Rosa
     places:
       - taaku
       - etaan
     year: 390
   - image: docs/d4.png
     alt: Museo Histórico de Deishe, Taaku. Bando del Administrador Real.
-    label: Bando
+    label: Bando del Administrador Real (Deishe)
     places:
       - deishe
       - taaku
     year: -11
   - image: docs/d5.png
     alt: Enciclopedia de Rocas y Minerales - 4a Edición revisada.
-    label: Enciclopedia
+    label: Enciclopedia de rocas y minerales
     places:
       - kalts-een
       - taaku
     year: 878
   - image: docs/d6.png
     alt: Corte del Rey, Taaku. Edicto Real.
-    label: Edicto
+    label: Edicto Real de la Corte del Rey
     places:
       - etaan
       - taaku
     year: -8
   - image: docs/d7.png
     alt: Celda-mina de Kalts'een, Taaku. Manual de gestión.
-    label: Manual
+    label: Manual de gestión de la celda-mina Kalts'een
     places:
       - kalts-een
       - taaku
     year: -37
   - image: docs/d8.png
     alt: Correspondencia personal de la familia Lihashi. Cartas manuscritas.
-    label: Cartas
+    label: Cartas de la familia Lihashi
     places:
       - kalts-een
       - etaan
@@ -68,14 +68,14 @@ documents:
     yearEnd: -1
   - image: docs/d9.png
     alt: Registro de actas y eventos mineros, volumen AAA372. Transcripción de reunión.
-    label: Transcripción
+    label: Acta del consejo minero de Kalts'een
     places:
       - kalts-een
       - taaku
     year: 0
   - image: docs/d10.png
     alt: Correspondencia de la Corte del Rey, Etaan. Carta Manuscrita.
-    label: Carta
+    label: Carta de la Corte del Rey de Etaan
     places:
       - kalts-een
       - etaan
@@ -83,14 +83,14 @@ documents:
     year: 0
   - image: docs/d11.png
     alt: Fortaleza de Kalts'een, Taaku. Diario personal.
-    label: Diario
+    label: Diario de Shteek
     places:
       - kalts-een
       - taaku
     year: 0
   - image: docs/d12.png
     alt: Museo Xunei Thun de Arte, Taaku. Audioguía para visitantes.
-    label: Audioguía II
+    label: Audioguía del Museo Xunei Thun (II)
     places:
       - deishe
       - taaku
@@ -98,6 +98,7 @@ documents:
 images:
   - file: imgs/xunei_sopa/xunei_sopa_logo.jpeg
     alt: Imagen promocional de un fabricante de comida preparada.
+    label: Anuncio de comida preparada
     caption: Imagen promocional de un fabricante de comida preparada.
     width: 55
     places:
@@ -105,6 +106,7 @@ images:
     year: 938
   - file: imgs/xunei_paso/xunei_paso3.png
     alt: "\"El paso de la historia\" - Papha Naara 56 GC"
+    label: "El paso de la historia"
     caption: "\"El paso de la historia\" - Papha Naara 56 GC"
     width: 100
     places:
@@ -112,6 +114,7 @@ images:
     year: 56
   - file: imgs/codo/final_elbow.jpeg
     alt: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
+    label: "Sin título" (Rey Codo)
     caption: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
     width: 100
     places:
@@ -119,6 +122,7 @@ images:
     year: 35
   - file: imgs/interlande_map.png
     alt: Mapa del lande de Taaku.
+    label: Mapa del lande de Taaku
     caption: Mapa del lande de Taaku.
     width: 85
     places:
@@ -126,12 +130,14 @@ images:
     year: 0
   - file: imgs/predator/predator7.jpeg
     alt: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
+    label: Ilustración del Pandilubi
     caption: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
     width: 100
     places:
       - lande-21
     year: 925
   - file: imgs/xunei_coin/coin.jpeg
+    label: Oblato de Taaku
     alt: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
     caption: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
     width: 100

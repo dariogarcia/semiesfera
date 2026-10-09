@@ -1016,11 +1016,45 @@
 
   // -- panel de documentos (lado derecho) ------------------------------------------------
 
+  // centra la línea de tiempo en un año (hover del panel de documentos);
+  // el dominio previo se guarda y se restaura al salir
+  var hoverDomain = null;
+
+  function centerTimelineOn(year) {
+    if (!dom.tlSvg || !isFinite(year)) return;
+    if (!hoverDomain) hoverDomain = { d0: DOMAIN.d0, d1: DOMAIN.d1 };
+    var span = DOMAIN.d1 - DOMAIN.d0;
+    var d0 = year - span / 2;
+    if (d0 < TL_MIN) d0 = TL_MIN;
+    if (d0 + span > TL_MAX) d0 = TL_MAX - span;
+    DOMAIN.d0 = d0;
+    DOMAIN.d1 = d0 + span;
+    renderTimeline();
+    updateTimelineHighlight();
+  }
+
+  function restoreTimelineDomain() {
+    if (!hoverDomain || !dom.tlSvg) return;
+    DOMAIN.d0 = hoverDomain.d0;
+    DOMAIN.d1 = hoverDomain.d1;
+    hoverDomain = null;
+    renderTimeline();
+    updateTimelineHighlight();
+  }
+
   function bindDocHover(scope) {
     scope.querySelectorAll('[data-doc-ref]').forEach(function (b) {
       var docId = b.getAttribute('data-doc-ref');
-      b.addEventListener('mouseenter', function () { if (findDoc(docId)) setPreview({ type: 'docs', ids: [docId] }); });
-      b.addEventListener('mouseleave', function () { setPreview(null); });
+      b.addEventListener('mouseenter', function () {
+        var d = findDoc(docId);
+        if (!d) return;
+        setPreview({ type: 'docs', ids: [docId] });
+        centerTimelineOn(d.yearEnd != null ? (d.year + d.yearEnd) / 2 : d.year);
+      });
+      b.addEventListener('mouseleave', function () {
+        setPreview(null);
+        restoreTimelineDomain();
+      });
     });
   }
 

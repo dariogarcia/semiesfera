@@ -85,6 +85,13 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
     var(--sea);
 }
 .landing-inner { max-width: 640px; text-align: center; }
+.landing-welcome {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-style: italic;
+  color: var(--text-dim);
+  margin: 0 0 2px;
+}
 .landing h1 {
   font-family: var(--font-serif);
   font-size: clamp(52px, 9vw, 78px);
@@ -176,7 +183,9 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .story-docs { margin-top: 40px; }
 /* documentos dentro del texto (lectores de historia y hoja del explorador) */
 .story-body .doc, .story-sheet-body .doc { margin: 30px 0; }
-.story-body .doc img, .story-sheet-body .doc img {
+/* las imágenes narrativas se encogen para no dominar la lectura; los
+   documentos (más altos que anchos) van a ancho completo */
+.story-body .doc.image img, .story-sheet-body .doc.image img {
   max-height: 85vh; object-fit: contain; object-position: top center;
 }
 .doc-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
