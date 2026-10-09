@@ -166,7 +166,10 @@ for (const s of stories) {
   for (const pid of used) {
     const place = placeById.get(pid);
     if (!revealed.some((piece) => insidePiece(place.geometry, piece))) {
-      fail(`stories/${s.id}: el lugar "${pid}" no está dentro de ninguna pieza que esta historia revele.`);
+      // no es un error: un documento puede venir de un lugar que esta
+      // historia no revela (p. ej. una publicación extranjera); aparecerá
+      // sobre territorio atenuado, como adelanto
+      console.warn(`avisos: stories/${s.id}: el lugar "${pid}" está fuera de las piezas que esta historia revela (se mostrará atenuado).`);
     }
   }
 }
@@ -445,7 +448,7 @@ const exploreMain = `<main class="explore" data-explore>
       <span class="tl-title">Línea de tiempo</span>
       <span class="tl-range-chip" data-range-chip hidden></span>
     </div>
-    <div class="tl-scroll"><svg class="tl-svg" data-tl-svg aria-label="Documentos en el tiempo"></svg></div>
+    <div class="tl-scroll"><svg class="tl-svg" data-tl-svg viewBox="0 0 1000 150" aria-label="Documentos en el tiempo"></svg></div>
     <div class="tl-empty" data-tl-empty hidden>La línea de tiempo se llenará con los documentos de las historias que leas.</div>
     <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom</div>
   </section>

@@ -14,6 +14,7 @@ documents:
     label: Audioguía
     places:
       - deishe
+      - taaku
     year: 480
   - image: docs/d2.png
     alt: Cuerpo de Ciudadania, Gobierno de Taaku. Examen de Ciudadanía - Rúbrica de evaluación.
@@ -26,36 +27,43 @@ documents:
     label: Manifiesto
     places:
       - taaku
+      - etaan
     year: 390
   - image: docs/d4.png
     alt: Museo Histórico de Deishe, Taaku. Bando del Administrador Real.
     label: Bando
     places:
       - deishe
+      - taaku
     year: -11
   - image: docs/d5.png
     alt: Enciclopedia de Rocas y Minerales - 4a Edición revisada.
     label: Enciclopedia
     places:
       - kalts-een
+      - taaku
     year: 878
   - image: docs/d6.png
     alt: Corte del Rey, Taaku. Edicto Real.
     label: Edicto
     places:
       - etaan
+      - taaku
     year: -8
   - image: docs/d7.png
     alt: Celda-mina de Kalts'een, Taaku. Manual de gestión.
     label: Manual
     places:
       - kalts-een
+      - taaku
     year: -37
   - image: docs/d8.png
     alt: Correspondencia personal de la familia Lihashi. Cartas manuscritas.
     label: Cartas
     places:
       - kalts-een
+      - etaan
+      - taaku
     year: -7
     yearEnd: -1
   - image: docs/d9.png
@@ -63,62 +71,67 @@ documents:
     label: Transcripción
     places:
       - kalts-een
+      - taaku
     year: 0
   - image: docs/d10.png
     alt: Correspondencia de la Corte del Rey, Etaan. Carta Manuscrita.
     label: Carta
     places:
       - kalts-een
+      - etaan
+      - taaku
     year: 0
   - image: docs/d11.png
     alt: Fortaleza de Kalts'een, Taaku. Diario personal.
     label: Diario
     places:
       - kalts-een
+      - taaku
     year: 0
   - image: docs/d12.png
     alt: Museo Xunei Thun de Arte, Taaku. Audioguía para visitantes.
     label: Audioguía II
     places:
       - deishe
+      - taaku
     year: 480
 images:
   - file: imgs/xunei_sopa/xunei_sopa_logo.jpeg
     alt: Imagen promocional de un fabricante de comida preparada.
     width: 40
     places:
-      - lande-14
-    year: 480
+      - taaku
+    year: 938
   - file: imgs/xunei_paso/xunei_paso3.png
     alt: "\"El paso de la historia\" - Papha Naara 56 GC"
     width: 85
     places:
-      - lande-14
-    year: 480
+      - etaan
+    year: 56
   - file: imgs/codo/final_elbow.jpeg
     alt: "\"Sin título\", obra original del siglo 1. A la derecha, una imagen con infrarrojos realizada durante su restauración muestra un repinte posterior sobre el original. Posible representación del \"Rey Codo\". Colección privada."
     width: 90
     places:
-      - lande-14
-    year: 480
+      - etaan
+    year: 35
   - file: imgs/interlande_map.png
     alt: Mapa del lande de Taaku.
     width: 50
     places:
-      - lande-14
-    year: 480
+      - taaku
+    year: 0
   - file: imgs/predator/predator7.jpeg
     alt: Ilustración zoográfica del Pandilubi. Geonaturaleza de Yukar, 2a Edición.
     width: 75
     places:
-      - lande-14
-    year: 480
+      - lande-21
+    year: 925
   - file: imgs/xunei_coin/coin.jpeg
     alt: "Oblato de Taaku del siglo 3. Fuente: Museo Xunei Thun de Arte, Taaku."
     width: 55
     places:
-      - lande-14
-    year: 480
+      - taaku
+    year: 275
 ---
 
 ¡Alegría! Por fin ha llegado el dia. Hoy sí. Hoy toca revisar la historia más famosa de la semiesfera. La del intrépido explorador de Taaku, primero en pisar dos landes. Nada más y nada menos que el primer interlande. Quizá os suene su nombre de alguno de los libros, películas, videojuegos, llaveros, velas aromáticas y demás objetos de uso doméstico que ha protagonizado. Me refiero, por supuesto, a la leyenda de Xunei Thun. ¿Y quién mejor para introducir a nuestro personaje (¡como si hiciera falta!) que a los presidentes de su club de fans? Exacto, veamos que nos cuentan  de Xunei los historiadores de Taaku de finales del Siglo 5.
