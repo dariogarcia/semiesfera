@@ -304,6 +304,8 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
   background: var(--accent-soft); border: 1px solid #5a4030; color: var(--accent);
   border-radius: 20px; padding: 2px 6px 2px 12px; font-size: 13px;
 }
+/* display:inline-flex gana al [hidden] del UA: regla explícita */
+.tl-range-chip[hidden] { display: none; }
 .chip-close { background: none; border: 0; color: inherit; cursor: pointer; font-size: 15px; padding: 0 4px; }
 .tl-scroll { overflow-x: auto; padding: 0 8px; }
 .tl-svg { width: 100%; min-width: 560px; height: auto; display: block; touch-action: pan-y; }
