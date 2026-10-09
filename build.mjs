@@ -168,9 +168,9 @@ for (const s of stories) {
     const place = placeById.get(pid);
     if (!revealed.some((piece) => insidePiece(place.geometry, piece))) {
       // no es un error: un documento puede venir de un lugar que esta
-      // historia no revela (p. ej. una publicación extranjera); aparecerá
-      // sobre territorio atenuado, como adelanto
-      console.warn(`avisos: stories/${s.id}: el lugar "${pid}" está fuera de las piezas que esta historia revela (se mostrará atenuado).`);
+      // historia no revela (p. ej. una publicación extranjera); su lugar
+      // no se dibuja en el mapa hasta que una historia revele su pieza
+      console.warn(`avisos: stories/${s.id}: el lugar "${pid}" está fuera de las piezas que esta historia revela (quedará oculto en el mapa).`);
     }
   }
 }
@@ -257,7 +257,7 @@ function storyRecord(s) {
     const d = t === 'd' ? docs[Number(n) - 1] : imgs[Number(n) - 1];
     if (!d) fail(`stories/${s.id}: el cuerpo referencia {{${t}${n}}} pero solo hay ${docs.length} documentos y ${imgs.length} imágenes`);
     const style = d.width ? ` style="max-width:${d.width}%"` : '';
-    return `<figure class="doc${t === 'i' ? ' image' : ''}" data-doc-id="${d.id}" data-doc-src="${d.image}"${style}><img alt="${escapeHtml(d.alt)}" loading="lazy"><figcaption><span class="doc-label">${escapeHtml(d.label)}</span><span class="doc-meta" data-doc-meta hidden></span>${d.caption ? `<span class="doc-caption">${escapeHtml(d.caption)}</span>` : ''}</figcaption></figure>`;
+    return `<figure class="doc${t === 'i' ? ' image' : ''}" data-doc-id="${d.id}" data-doc-src="${d.image}"${style}><img alt="${escapeHtml(d.alt)}" loading="lazy">${d.caption ? `<figcaption><span class="doc-caption">${escapeHtml(d.caption)}</span></figcaption>` : ''}</figure>`;
   });
   const storyEras = eras.filter((era) =>
     all.some((d) => d.year <= era.to && (d.yearEnd ?? d.year) >= era.from)
@@ -291,6 +291,10 @@ const indexData = {
   mapSize: mapData.size,
   totalPieces: mapData.pieces.length,
   complete: { file: mapData.complete.file, width: mapData.size.width, height: mapData.size.height },
+  // todos los lugares del mundo, para los filtros del panel de documentos:
+  // los landes que aún no revela ninguna historia leída también se pueden
+  // seleccionar (no mostrarán documentos hasta que existan)
+  places: [...placeById.values()].map((p) => ({ id: p.id, name: p.name, parent: p.parent ?? null, geometry: p.geometry })),
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
     summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
@@ -358,11 +362,8 @@ function landingMain() {
 
 function storyMain(s, rec) {
   const docFigure = (d) => `<figure class="doc${d.kind === 'image' ? ' image' : ''}" data-doc-id="${d.id}"${d.width ? ` style="max-width:${d.width}%"` : ''}>
-        <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">
-        <figcaption>
-          <span class="doc-label">${escapeHtml(d.label)}</span>
-          <span class="doc-meta" data-doc-meta hidden></span>${d.kind === 'image' && d.caption ? `\n          <span class="doc-caption">${escapeHtml(d.caption)}</span>` : ''}
-        </figcaption>
+        <img src="../../${d.image}" alt="${escapeHtml(d.alt)}" loading="lazy">${d.kind === 'image' && d.caption ? `
+        <figcaption><span class="doc-caption">${escapeHtml(d.caption)}</span></figcaption>` : ''}
       </figure>`;
 
   // los documentos e imágenes se muestran donde estaban en el texto
@@ -452,7 +453,7 @@ const exploreMain = `<main class="explore" data-explore>
     </div>
     <div class="tl-scroll"><svg class="tl-svg" data-tl-svg viewBox="0 0 1000 150" aria-label="Documentos en el tiempo"></svg></div>
     <div class="tl-empty" data-tl-empty hidden>La línea de tiempo se llenará con los documentos de las historias que leas.</div>
-    <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom</div>
+    <div class="tl-hint">Arrastra sobre la línea para acotar un periodo · rueda o pellizco para zoom · Mayús+rueda para desplazar</div>
   </section>
   <aside class="stories-panel" aria-label="Historias">
     <div class="sp-head">
@@ -472,6 +473,20 @@ const exploreMain = `<main class="explore" data-explore>
       <h2>Documentos</h2>
       <span class="dp-count" data-dp-count></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
+    </div>
+    <div class="dp-controls" data-dp-controls hidden>
+      <div class="dp-control">
+        <span class="dp-control-label">Lugar</span>
+        <select data-place-select aria-label="Filtrar documentos por lugar"><option value="">Todos los lugares</option></select>
+      </div>
+      <div class="dp-control">
+        <span class="dp-control-label">Época</span>
+        <div class="dp-years">
+          <input type="number" inputmode="numeric" data-year-from placeholder="desde" aria-label="Filtrar desde un año">
+          <span class="dp-years-sep">–</span>
+          <input type="number" inputmode="numeric" data-year-to placeholder="hasta" aria-label="Filtrar hasta un año">
+        </div>
+      </div>
     </div>
     <div class="dp-filters" data-dp-filters hidden></div>
     <div class="dp-body" data-dp-body>

@@ -121,6 +121,24 @@
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
+  // ¿cae la geometría del lugar dentro del rectángulo de la pieza?
+  function insidePiece(geometry, piece) {
+    if (geometry.type === 'point') {
+      return geometry.x >= piece.x && geometry.x <= piece.x + piece.width &&
+        geometry.y >= piece.y && geometry.y <= piece.y + piece.height;
+    }
+    if (geometry.type === 'poly') {
+      return geometry.contours.every(function (pts) {
+        return pts.every(function (p) {
+          return p[0] >= piece.x && p[0] <= piece.x + piece.width &&
+            p[1] >= piece.y && p[1] <= piece.y + piece.height;
+        });
+      });
+    }
+    return geometry.x - geometry.radius >= piece.x && geometry.x + geometry.radius <= piece.x + piece.width &&
+      geometry.y - geometry.radius >= piece.y && geometry.y + geometry.radius <= piece.y + piece.height;
+  }
+
   // -- datos --------------------------------------------------------------------
 
   function prepareData(files) {
@@ -239,6 +257,11 @@
       return (a.geometry.type === 'point' ? 1 : 0) - (b.geometry.type === 'point' ? 1 : 0);
     });
     placeList.forEach(function (place) {
+      // un lugar solo se dibuja sobre territorio revelado: los landes cuya
+      // pieza ninguna historia leída ha revelado quedan ocultos, igual que
+      // los que aún no tienen documentos
+      var revealed = state.pieces.some(function (p) { return insidePiece(place.geometry, p); });
+      if (!revealed) return;
       var count = docsAtPlace(place.id).length;
       if (!count) return;
       var g = svgEl('g', {
@@ -573,6 +596,17 @@
 
     dom.tlSvg.addEventListener('wheel', function (e) {
       e.preventDefault();
+      // desplazamiento horizontal: Mayús+rueda o gesto horizontal del trackpad
+      var hUnits = e.shiftKey ? (e.deltaY || e.deltaX) : e.deltaX;
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        var span = DOMAIN.d1 - DOMAIN.d0;
+        var shift = -hUnits * 0.0016 * span;
+        DOMAIN.d0 += shift;
+        DOMAIN.d1 += shift;
+        clampDomain();
+        renderTimeline();
+        return;
+      }
       var rect = dom.tlSvg.getBoundingClientRect();
       var frac = clamp((e.clientX - rect.left) / rect.width, 0, 1);
       zoomDomain(frac, Math.exp(-e.deltaY * 0.0016));
@@ -1015,6 +1049,90 @@
     renderDocsPanel();
   }
 
+  // -- filtros del panel de documentos ------------------------------------------------------
+
+  function buildPlaceOptions() {
+    if (!dom.placeSelect) return;
+    var regions = [], points = {};
+    state.places.forEach(function (p) {
+      if (p.geometry.type === 'point') {
+        var key = p.parent || '';
+        (points[key] = points[key] || []).push(p);
+      } else {
+        regions.push(p);
+      }
+    });
+    var html = '<option value="">Todos los lugares</option>';
+    regions.forEach(function (r) {
+      var pts = points[r.id] || [];
+      if (!pts.length) {
+        html += '<option value="' + S.esc(r.id) + '">' + S.esc(r.name) + '</option>';
+        return;
+      }
+      html += '<optgroup label="' + S.esc(r.name) + '">' +
+        '<option value="' + S.esc(r.id) + '">Todo ' + S.esc(r.name) + '</option>';
+      pts.forEach(function (p) {
+        html += '<option value="' + S.esc(p.id) + '">' + S.esc(p.name) + '</option>';
+      });
+      html += '</optgroup>';
+    });
+    // puntos sueltos sin lande padre conocido
+    (points[''] || []).forEach(function (p) {
+      html += '<option value="' + S.esc(p.id) + '">' + S.esc(p.name) + '</option>';
+    });
+    dom.placeSelect.innerHTML = html;
+    syncFilterControls();
+  }
+
+  function setPlaceFilter(id) {
+    state.sel.place = id || null;
+    if (state.sel.place) state.sel.doc = null;
+    syncUrl();
+    renderTimeline();
+    updateHighlights(true);
+    renderDocsPanel();
+  }
+
+  function applyYearInputs() {
+    var rawFrom = dom.yearFrom.value.trim();
+    var rawTo = dom.yearTo.value.trim();
+    if (rawFrom === '' && rawTo === '') {
+      if (state.range) clearRangeFilter();
+      return;
+    }
+    var from = parseInt(rawFrom, 10), to = parseInt(rawTo, 10);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return;
+    if (from > to) {
+      var tmp = from; from = to; to = tmp;
+      dom.yearFrom.value = from; dom.yearTo.value = to;
+    }
+    state.range = { from: from, to: to };
+    syncUrl();
+    renderTimeline();
+    updateHighlights();
+    updateRangeChip();
+    renderDocsPanel();
+  }
+
+  // el select y los inputs reflejan el estado, venga del mapa, de la
+  // línea de tiempo o de la propia URL
+  function syncFilterControls() {
+    if (!dom.placeSelect) return;
+    dom.placeSelect.value = state.sel.place || '';
+    var f = state.range ? String(Math.round(state.range.from)) : '';
+    var t = state.range ? String(Math.round(state.range.to)) : '';
+    if (document.activeElement !== dom.yearFrom) dom.yearFrom.value = f;
+    if (document.activeElement !== dom.yearTo) dom.yearTo.value = t;
+  }
+
+  function initFilterEvents() {
+    dom.placeSelect.addEventListener('change', function () {
+      setPlaceFilter(dom.placeSelect.value || null);
+    });
+    dom.yearFrom.addEventListener('change', applyYearInputs);
+    dom.yearTo.addEventListener('change', applyYearInputs);
+  }
+
   function updateFilterChips() {
     var bar = dom.dpFilters;
     if (!bar) return;
@@ -1065,6 +1183,8 @@
     updateFilterChips();
     bindDocHover(dom.dpList);
     updateDocsPanelHighlight();
+    if (dom.dpControls) dom.dpControls.hidden = !state.docs.length;
+    syncFilterControls();
   }
 
   // -- visibilidad de los paneles ----------------------------------------------------------
@@ -1190,10 +1310,14 @@
 
   function rebuildState() {
     state.pieces = [];
+    // sembrar con todos los lugares conocidos (index.json): los filtros
+    // pueden referirse a landes que ninguna historia leída ha revelado
     state.places = new Map();
+    (state.index.places || []).forEach(function (p) { state.places.set(p.id, p); });
     state.docs = [];
     state.eras = [];
     prepareData(state.files);
+    buildPlaceOptions();
   }
 
   function addRecordToState(rec) {
@@ -1253,12 +1377,17 @@
     dom.dpCount = document.querySelector('[data-dp-count]');
     dom.dpNone = document.querySelector('[data-dp-none]');
     dom.dpFilters = document.querySelector('[data-dp-filters]');
+    dom.dpControls = document.querySelector('[data-dp-controls]');
+    dom.placeSelect = document.querySelector('[data-place-select]');
+    dom.yearFrom = document.querySelector('[data-year-from]');
+    dom.yearTo = document.querySelector('[data-year-to]');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     collectDom();
     loadPanels();
     applyPanels();
+    if (dom.placeSelect && dom.yearFrom && dom.yearTo) initFilterEvents();
 
     document.addEventListener('click', function (e) {
       var storyBtn = e.target.closest('[data-open-story]');
