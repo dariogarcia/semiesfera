@@ -541,13 +541,13 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .reader[hidden] { display: none; }
 .reader-backdrop { position: absolute; inset: 0; background: rgba(5, 9, 13, 0.85); }
 .reader-figure {
-  position: relative; margin: 0; max-width: min(92vw, 620px);
+  position: relative; margin: 0; max-width: min(94vw, 880px);
   max-height: 86vh; overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; gap: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
   padding: 0 10px;
 }
 .reader-figure img {
-  width: 100%; height: auto; flex: none;
+  width: auto; max-width: 100%; height: auto; flex: none;
   border-radius: 8px; border: 1px solid var(--line); background: #fff;
 }
 .reader-figure figcaption { text-align: center; color: var(--text-dim); font-size: 14px; }
