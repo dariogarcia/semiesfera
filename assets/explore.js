@@ -240,19 +240,36 @@
 
   // -- mapa ---------------------------------------------------------------------
 
-  function piecesBbox() {
-    if (!state.pieces.length) {
+  function piecesBbox(list) {
+    var pieces = list || state.pieces;
+    if (!pieces.length) {
       return { x: 0, y: 0, w: state.index.mapSize.width, h: state.index.mapSize.height };
     }
     var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    state.pieces.forEach(function (p) {
+    pieces.forEach(function (p) {
       x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y);
       x1 = Math.max(x1, p.x + p.width); y1 = Math.max(y1, p.y + p.height);
     });
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   }
 
-  function applyTransform() {
+  // la cámara del mapa se anima solo en los movimientos programáticos
+  // (vuelo a territorio nuevo); el arrastre y el zoom van a mano alzada
+  var viewAnimTimer = null;
+
+  function applyTransform(animate) {
+    if (animate) {
+      dom.world.classList.add('view-anim');
+      clearTimeout(viewAnimTimer);
+      viewAnimTimer = setTimeout(function () {
+        viewAnimTimer = null;
+        dom.world.classList.remove('view-anim');
+      }, 800);
+    } else if (viewAnimTimer) {
+      clearTimeout(viewAnimTimer);
+      viewAnimTimer = null;
+      dom.world.classList.remove('view-anim');
+    }
     dom.world.style.transform = 'translate(' + view.tx + 'px,' + view.ty + 'px) scale(' + view.k + ')';
   }
 
@@ -275,6 +292,18 @@
     view.ty = py - (py - view.ty) * (k2 / view.k);
     view.k = k2;
     applyTransform();
+    updateMapScale();
+  }
+
+  // vuelo animado de la cámara hasta encuadrar una caja del mapa
+  function flyToBbox(b) {
+    var vw = dom.viewport.clientWidth || 600;
+    var vh = dom.viewport.clientHeight || 400;
+    var k = clamp(Math.min(vw / b.w, vh / b.h) * 0.92, view.minK, 12);
+    view.k = k;
+    view.tx = (vw - b.w * k) / 2 - b.x * k;
+    view.ty = (vh - b.h * k) / 2 - b.y * k;
+    applyTransform(true);
     updateMapScale();
   }
 
@@ -1503,10 +1532,15 @@
   }
 
   function refreshWorld() {
+    var seenBefore = S.getSeenPieces();
     buildMap();
     initDomain();
     renderTimeline();
     fitMap();
+    // si hay territorio recién revelado (y no es todo el mapa), la cámara
+    // vuela hasta él para que la revelación se disfrute
+    var fresh = state.pieces.filter(function (p) { return seenBefore.indexOf(p.id) < 0; });
+    if (fresh.length && fresh.length < state.pieces.length) flyToBbox(piecesBbox(fresh));
     updateHighlights();
     updateHints();
     S.setSeenPieces(state.pieces.map(function (p) { return p.id; }));
@@ -1519,7 +1553,10 @@
       if (rec) {
         addRecordToState(rec);
         refreshWorld();
-        if (state.readerStory === id) fillStoryReader(rec);
+        // se cierran los lectores para dejar el mapa a la vista durante
+        // la revelación de las piezas nuevas
+        if (dom.reader && !dom.reader.hidden) closeReader();
+        closeStoryReader();
       }
       renderStoriesPanel();
       renderDocsPanel();
