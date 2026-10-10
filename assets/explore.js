@@ -212,6 +212,7 @@
     var LABEL_MIN_K = [0, 0.55, 0.95];
     placeEls.forEach(function (g) {
       g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 9 / k); });
+      g.querySelectorAll('.place-ring').forEach(function (c) { c.setAttribute('r', 14 / k); c.setAttribute('stroke-width', 1.5 / k); });
       g.querySelectorAll('.place-hit').forEach(function (c) { c.setAttribute('r', 16 / k); });
       g.querySelectorAll('.place-label').forEach(function (t) { t.setAttribute('font-size', 13 / k); });
       g.querySelectorAll('.region-circle').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
@@ -285,6 +286,8 @@
       if (geom.type === 'point') {
         // área de clic generosa: el punto visible + un halo transparente
         svgEl('circle', { class: 'place-hit', cx: geom.x, cy: geom.y, r: 16 }, g);
+        // anillo que marca el punto fijado como selección
+        svgEl('circle', { class: 'place-ring', cx: geom.x, cy: geom.y, r: 14 }, g);
         svgEl('circle', { class: 'place-dot', cx: geom.x, cy: geom.y, r: 9 }, g);
         var t = svgEl('text', { class: 'place-label', x: geom.x + 13, y: geom.y + 4 }, g);
         t.textContent = place.name;
@@ -728,19 +731,21 @@
   function currentHighlight() {
     var placeIds = new Set();
     var docIds = new Set();
-    function addDocs(docs) {
+    function addDocs(docs, withPlaces) {
       docs.forEach(function (d) {
         docIds.add(d.id);
-        d.places.forEach(function (pid) { placeIds.add(pid); });
+        if (withPlaces) d.places.forEach(function (pid) { placeIds.add(pid); });
       });
     }
     var p = state.preview;
     if (p) {
-      if (p.type === 'place') { placeIds.add(p.id); addDocs(docsAtPlace(p.id)); }
-      else if (p.type === 'docs') addDocs(p.ids.map(findDoc).filter(Boolean));
+      if (p.type === 'place') { placeIds.add(p.id); addDocs(docsAtPlace(p.id), true); }
+      else if (p.type === 'docs') addDocs(p.ids.map(findDoc).filter(Boolean), true);
     }
-    if (state.sel.place) { placeIds.add(state.sel.place); addDocs(docsAtPlace(state.sel.place)); }
-    if (state.sel.doc) { var d = findDoc(state.sel.doc); if (d) addDocs([d]); }
+    // al fijar un lugar solo se marca él: los lugares que también aparecen en
+    // sus documentos no se iluminan, o parecerían seleccionados también
+    if (state.sel.place) { placeIds.add(state.sel.place); addDocs(docsAtPlace(state.sel.place), false); }
+    if (state.sel.doc) { var d = findDoc(state.sel.doc); if (d) addDocs([d], true); }
     return { placeIds: placeIds, docIds: docIds };
   }
 
@@ -762,6 +767,7 @@
     });
     placeEls.forEach(function (g, id) {
       g.classList.toggle('lit', h.placeIds.has(id));
+      g.classList.toggle('selected', state.sel.place === id);
       g.classList.toggle('dimmed', !visibleIds.has(id));
     });
   }
