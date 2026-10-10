@@ -358,6 +358,7 @@ function landingMain() {
     </ol>
     <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
     <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
+    <p class="landing-progress" data-landing-progress hidden></p>
     <p class="landing-legal">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</p>
   </div>
 </main>`;
@@ -472,6 +473,7 @@ const exploreMain = `<main class="explore" data-explore>
     <div class="dp-head">
       <h2>Documentos</h2>
       <span class="dp-count" data-dp-count></span>
+      <span class="dp-progress" data-dp-progress hidden><span class="mini-bar"><i></i></span><span class="dp-progress-num"></span></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
     </div>
     <div class="dp-controls" data-dp-controls hidden>

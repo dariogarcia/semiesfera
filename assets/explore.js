@@ -865,6 +865,7 @@
     state.readerDoc = docId;
     if (revealed) {
       var hadPlace = state.sel.place;
+      markDocSeen(docId);
       state.sel.doc = docId;
       state.sel.place = null;
       syncUrl();
@@ -1206,6 +1207,39 @@
     if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
   }
 
+  // -- progreso de exploración (documentos vistos / revelados) ----------------------------
+
+  function updateDocsProgress() {
+    if (!dom.dpProgress) return;
+    var total = state.docs.length;
+    if (!total) { dom.dpProgress.hidden = true; return; }
+    var seen = getSeenDocSet();
+    var n = 0;
+    state.docs.forEach(function (d) { if (seen[d.id]) n++; });
+    var pct = Math.round((n / total) * 100);
+    dom.dpProgress.querySelector('.mini-bar i').style.width = pct + '%';
+    dom.dpProgress.querySelector('.dp-progress-num').textContent = n + '/' + total;
+    dom.dpProgress.title = n + ' de ' + total + ' documentos vistos';
+    dom.dpProgress.hidden = false;
+  }
+
+  var seenDocSet = null;
+  function getSeenDocSet() {
+    if (!seenDocSet) {
+      seenDocSet = {};
+      S.getSeenDocs().forEach(function (id) { seenDocSet[id] = 1; });
+    }
+    return seenDocSet;
+  }
+
+  function markDocSeen(id) {
+    if (!getSeenDocSet()[id]) {
+      seenDocSet[id] = 1;
+      S.markDocSeen(id);
+      updateDocsProgress();
+    }
+  }
+
   function renderDocsPanel() {
     if (!dom.dpList) return;
     var list = filteredDocs();
@@ -1261,6 +1295,7 @@
     updateFilterChips();
     bindDocHover(dom.dpList);
     updateDocsPanelHighlight();
+    updateDocsProgress();
     if (dom.dpControls) dom.dpControls.hidden = !state.docs.length;
     syncFilterControls();
   }
@@ -1428,6 +1463,7 @@
     dom.dpList = document.querySelector('[data-dp-list]');
     dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
+    dom.dpProgress = document.querySelector('[data-dp-progress]');
     dom.dpNone = document.querySelector('[data-dp-none]');
     dom.dpFilters = document.querySelector('[data-dp-filters]');
     dom.dpControls = document.querySelector('[data-dp-controls]');

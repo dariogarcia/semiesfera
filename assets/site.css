@@ -442,6 +442,26 @@ figure.doc { margin: 0; }
 }
 .dp-head h2 { font-size: 18px; margin: 0; }
 .dp-count { color: var(--text-dim); font-size: 13px; flex: 1; }
+
+/* progreso de exploración (docs vistos / revelados) */
+.mini-bar {
+  display: inline-block; width: 56px; height: 4px;
+  border-radius: 2px; background: var(--line); overflow: hidden;
+  vertical-align: middle;
+}
+.mini-bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 2px; transition: width 0.35s ease; }
+.dp-progress { display: inline-flex; align-items: center; gap: 7px; flex: none; }
+.dp-progress[hidden] { display: none; }
+.dp-progress-num {
+  color: var(--text-dim); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.landing-progress {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin: 14px 0 0; color: var(--text-dim); font-size: 13px;
+}
+.landing-progress[hidden] { display: none; }
+.landing-progress .mini-bar { width: 120px; height: 5px; }
+
 .dp-filters {
   display: flex; flex-wrap: wrap; gap: 6px;
   padding: 10px 16px; border-bottom: 1px solid var(--line);
