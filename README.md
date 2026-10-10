@@ -94,7 +94,13 @@ cuando cambie el mundo del generador (o renombrar landes):
    (genera `story.md`, `story.pdf`, `cover.svg` y los `docs/dN.png`; ajusta a
    mano lo que quieras después), o créala a mano. Para retocar un documento
    suelto después: `npm run render-doc -- mi-historia --doc 5`.
-4. Pon la fecha `publish` y haz push. Un workflow diario reconstruye y libera
+4. Optimiza las imágenes antes de publicar (con Pillow, sin tocar los
+   originales de `_Sources/`):
+   - escaneos de documentos y piezas del mapa (PNG): paleta de 256 colores
+     (`im.quantize(256)`; si el original tiene ≤256 colores es lossless);
+   - ilustraciones y arte fotográfico: WebP `quality=88` (cambia el `file:`
+     en `story.md` a `.webp`); los JPEG ya comprimidos no suelen ganar nada.
+5. Pon la fecha `publish` y haz push. Un workflow diario reconstruye y libera
    la historia en su fecha. Las comprobaciones del build frenan los errores
    antes de publicar.
 

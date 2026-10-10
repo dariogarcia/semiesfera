@@ -91,7 +91,7 @@ images:
     places:
       - taaku
     year: 938
-  - file: imgs/xunei_paso/xunei_paso3.png
+  - file: imgs/xunei_paso/xunei_paso3.webp
     alt: "\"El paso de la historia\" - Papha Naara 56 GC"
     label: "El paso de la historia"
     caption: "\"El paso de la historia\" - Papha Naara 56 GC"
