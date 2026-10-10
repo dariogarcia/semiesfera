@@ -247,6 +247,38 @@
     }).catch(function () { /* sin datos, sin línea */ });
   }
 
+  // -- barra de progreso de lectura -----------------------------------------------
+
+  // línea fina arriba del viewport que avanza con el scroll del documento;
+  // scrollEl puede ser window (página) o un elemento con overflow propio
+  function readBar(scrollEl, targetEl, parentEl) {
+    var bar = document.createElement('div');
+    bar.className = 'read-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    var fill = document.createElement('i');
+    bar.appendChild(fill);
+    (parentEl || document.body).appendChild(bar);
+
+    function update() {
+      var total, done;
+      if (scrollEl === window) {
+        var r = targetEl.getBoundingClientRect();
+        total = r.height - window.innerHeight;
+        done = -r.top;
+      } else {
+        total = scrollEl.scrollHeight - scrollEl.clientHeight;
+        done = scrollEl.scrollTop;
+      }
+      var pct = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0;
+      fill.style.width = (pct * 100) + '%';
+    }
+
+    scrollEl.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+    return { el: bar, update: update };
+  }
+
   // caja que rodea un conjunto de piezas del mapa
   function piecesBbox(pieces) {
     var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -295,6 +327,7 @@
     setSeenPieces: setSeenPieces,
     getSeenDocs: getSeenDocs,
     markDocSeen: markDocSeen,
-    explorationProgress: explorationProgress
+    explorationProgress: explorationProgress,
+    readBar: readBar
   };
 })();

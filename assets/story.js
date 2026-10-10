@@ -176,15 +176,28 @@
     }
   }
 
+  // barra de progreso de lectura (solo si la historia es legible)
+  var readBar = null;
+  function attachReadBar() {
+    if (readBar) return;
+    var content = el('[data-story-content]');
+    var body = content && !content.hidden ? content.querySelector('.story-body') : null;
+    if (body) readBar = S.readBar(window, body);
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     if (!PAGE) return;
     applyReadState();
+    attachReadBar();
 
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-mark-read]');
       if (!btn || btn.disabled) return;
       var id = btn.getAttribute('data-id');
-      S.markReadAndNotify(id, applyReadState);
+      S.markReadAndNotify(id, function () {
+        applyReadState();
+        attachReadBar();
+      });
     });
   });
 })();

@@ -662,7 +662,7 @@
     var hasDocs = state.docs.length > 0;
     var empty = !hasDocs || !vis.length;
     dom.tlEmpty.textContent = hasDocs
-      ? 'Ningún documento encaja con el filtro.'
+      ? 'Nada por aquí… todavía. Prueba otro lugar o ensancha el periodo.'
       : 'La línea de tiempo se llenará con los documentos de las historias que leas.';
     dom.tlEmpty.hidden = !empty;
     dom.tlSvg.style.display = hasDocs ? '' : 'none';
@@ -1117,7 +1117,13 @@
     });
     if (!html) html = '<li class="sp-none">No hay historias disponibles todavía.</li>';
     dom.spList.innerHTML = html;
-    dom.spCount.textContent = n + ' / ' + S.bySeq().length;
+    var total = S.bySeq().length;
+    dom.spCount.textContent = n + ' / ' + total;
+    if (dom.spProgress) {
+      dom.spProgress.querySelector('.mini-bar i').style.width = total ? (n / total * 100) + '%' : '0%';
+      dom.spProgress.title = n + ' de ' + total + ' historias leídas';
+      dom.spProgress.hidden = !total;
+    }
   }
 
   // -- panel de documentos (lado derecho) ------------------------------------------------
@@ -1320,21 +1326,7 @@
     if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
   }
 
-  // -- progreso de exploración (documentos vistos / revelados) ----------------------------
-
-  function updateDocsProgress() {
-    if (!dom.dpProgress) return;
-    var total = state.docs.length;
-    if (!total) { dom.dpProgress.hidden = true; return; }
-    var seen = getSeenDocSet();
-    var n = 0;
-    state.docs.forEach(function (d) { if (seen[d.id]) n++; });
-    var pct = Math.round((n / total) * 100);
-    dom.dpProgress.querySelector('.mini-bar i').style.width = pct + '%';
-    dom.dpProgress.querySelector('.dp-progress-num').textContent = n + '/' + total;
-    dom.dpProgress.title = n + ' de ' + total + ' documentos vistos';
-    dom.dpProgress.hidden = false;
-  }
+  // -- progreso de exploración (documentos vistos) ----------------------------
 
   var seenDocSet = null;
   function getSeenDocSet() {
@@ -1349,7 +1341,6 @@
     if (!getSeenDocSet()[id]) {
       seenDocSet[id] = 1;
       S.markDocSeen(id);
-      updateDocsProgress();
     }
   }
 
@@ -1396,7 +1387,7 @@
       dom.dpNone.textContent = 'Los documentos de las historias que marques como leídas aparecerán aquí, en orden cronológico.';
       dom.dpNone.hidden = false;
     } else if (!list.length) {
-      dom.dpNone.textContent = 'Ningún documento encaja con el filtro.';
+      dom.dpNone.textContent = 'Nada por aquí… todavía. Prueba otro lugar o ensancha el periodo.';
       dom.dpNone.hidden = false;
     } else {
       dom.dpNone.hidden = true;
@@ -1408,7 +1399,6 @@
     updateFilterChips();
     bindDocHover(dom.dpList);
     updateDocsPanelHighlight();
-    updateDocsProgress();
     if (dom.dpControls) dom.dpControls.hidden = !state.docs.length;
     syncFilterControls();
   }
@@ -1489,6 +1479,10 @@
     var sheet = dom.storyReader.querySelector('[data-story-sheet]');
     if (sheet) sheet.scrollTop = 0;
     bindDocHover(dom.storyReader);
+    // la barra de lectura se re-engancha tras reemplazar el contenido
+    if (!state.readBar) state.readBar = S.readBar(dom.storyReader, dom.storyReader, dom.storyReader);
+    else dom.storyReader.appendChild(state.readBar.el);
+    state.readBar.update();
   }
 
   function openStoryReader(id) {
@@ -1580,11 +1574,11 @@
     dom.rangeChip = document.querySelector('[data-range-chip]');
     dom.spList = document.querySelector('[data-sp-list]');
     dom.spCount = document.querySelector('[data-sp-count]');
+    dom.spProgress = document.querySelector('[data-sp-progress]');
     dom.exploreEl = document.querySelector('[data-explore]');
     dom.dpList = document.querySelector('[data-dp-list]');
     dom.dpBody = document.querySelector('[data-dp-body]');
     dom.dpCount = document.querySelector('[data-dp-count]');
-    dom.dpProgress = document.querySelector('[data-dp-progress]');
     dom.dpNone = document.querySelector('[data-dp-none]');
     dom.dpFilters = document.querySelector('[data-dp-filters]');
     dom.dpControls = document.querySelector('[data-dp-controls]');

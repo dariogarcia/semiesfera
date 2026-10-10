@@ -438,7 +438,7 @@ const exploreMain = `<main class="explore" data-explore>
     </div>
     <div class="map-hint" data-map-hint hidden>
       <h2>Aún no hay mapa</h2>
-      <p>El mundo empieza sin mapa. Lee la primera historia para empezar a dibujarlo.</p>
+      <p>El mundo empieza sin mapa. Toda carta se dibuja después de pisar el terreno: lee la primera historia.</p>
     </div>
     <div class="map-controls">
       <button class="icon-btn" type="button" data-zoom-in aria-label="Acercar">+</button>
@@ -459,6 +459,7 @@ const exploreMain = `<main class="explore" data-explore>
     <div class="sp-head">
       <h2>Historias</h2>
       <span class="sp-count" data-sp-count></span>
+      <span class="sp-progress" data-sp-progress hidden><span class="mini-bar"><i></i></span></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="stories" aria-label="Ocultar panel de historias" title="Ocultar">⟨</button>
     </div>
     <div class="sp-body">
@@ -473,7 +474,6 @@ const exploreMain = `<main class="explore" data-explore>
     <div class="dp-head">
       <h2>Documentos</h2>
       <span class="dp-count" data-dp-count></span>
-      <span class="dp-progress" data-dp-progress hidden><span class="mini-bar"><i></i></span><span class="dp-progress-num"></span></span>
       <button class="icon-btn panel-toggle" type="button" data-toggle-panel="docs" aria-label="Ocultar panel de documentos" title="Ocultar">⟩</button>
     </div>
     <div class="dp-controls" data-dp-controls hidden>
