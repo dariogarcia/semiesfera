@@ -352,6 +352,7 @@ function landingMain() {
     </ol>
     <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
     <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
+    <p class="landing-legal">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</p>
   </div>
 </main>`;
 }
@@ -513,7 +514,8 @@ writeOut('index.html', layout({
   desc: 'Un ciclo de historias sobre un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
   main: landingMain(),
   script: null,
-  inlineIndex: false
+  inlineIndex: false,
+  foot: false
 }));
 
 writeOut('explorar/index.html', layout({
