@@ -461,10 +461,19 @@ figure.doc { margin: 0; }
   background: none;
   padding: 0;
 }
+/* estados: el filo izquierdo expresa SIEMPRE atención, en dos niveles —
+   naranja suave sin fondo = relacionado con lo que señalas (hover en el
+   mapa, la línea de tiempo u otra fila); naranja fuerte con fondo cálido =
+   abierto en el lector. El icono de marco antes de la etiqueta marca las
+   imágenes de la narrativa, que no son documentos renderizados */
 .dp-entry:hover { background: var(--bg-soft); }
-.dp-entry.active, .dp-entry.lit { border-left-color: var(--accent); background: var(--bg-soft); }
-.dp-entry.dp-image { border-left-color: rgba(226, 148, 107, 0.45); }
-.dp-entry.dp-image.active, .dp-entry.dp-image.lit { border-left-color: var(--accent); }
+.dp-entry.lit { border-left-color: var(--accent); }
+.dp-entry.active { border-left-color: var(--accent); background: var(--accent-soft); }
+.dp-entry.dp-image .dp-label::before {
+  content: ''; display: inline-block; width: 9px; height: 8px;
+  border: 1px solid var(--text-dim); border-radius: 1px;
+  margin-right: 6px; opacity: 0.8;
+}
 .dp-entry > button {
   display: flex; align-items: baseline; gap: 8px;
   width: 100%; text-align: left; cursor: pointer;
