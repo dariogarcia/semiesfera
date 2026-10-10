@@ -340,6 +340,7 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true, 
 <script>window.SEMI_BASE=${jsonInline(p)};window.SEMI_V=${jsonInline(DATA_V)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
 </head>
 <body>
+<noscript><div class="noscript">Este sitio necesita JavaScript para el mapa, la línea de tiempo y para recordar tu progreso. Las historias nuevas se anuncian en el <a href="${p}rss.xml">feed RSS</a>.</div></noscript>
 ${main}
 ${foot ? `<footer class="site-foot">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</footer>` : ''}
 <script src="${p}assets/core.js?v=${ASSET_V}"></script>
@@ -629,6 +630,24 @@ writeOut('404.html', layout({
   inlineIndex: false,
   foot: false
 }));
+
+writeOut('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${SITE_URL}</loc></url>
+  <url><loc>${SITE_URL}explorar/</loc></url>
+${published.map((s) => `  <url><loc>${SITE_URL}historias/${s.id}/</loc><lastmod>${s.publish}</lastmod></url>`).join('\n')}
+</urlset>
+`);
+
+// nota: siendo un project site (servido bajo /semiesfera/), los crawlers solo
+// leen el robots.txt de la raíz del dominio; este archivo es inofensivo ahí,
+// y el sitemap se puede subir directamente en Google Search Console
+writeOut('robots.txt', `# Semiesfera
+User-agent: *
+Allow: /
+
+Sitemap: ${SITE_URL}sitemap.xml
+`);
 
 writeOut('rss.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
