@@ -1172,18 +1172,42 @@
     bar.hidden = false;
   }
 
+  function eraOf(year) {
+    for (var i = 0; i < state.eras.length; i++) {
+      if (year >= state.eras[i].from && year <= state.eras[i].to) return state.eras[i];
+    }
+    return null;
+  }
+
   function renderDocsPanel() {
     if (!dom.dpList) return;
     var list = filteredDocs();
-    var html = '';
+    // la historia solo se muestra en cada fila si hay más de una con documentos
+    var storiesSeen = {};
+    state.docs.forEach(function (d) { storiesSeen[d.story] = 1; });
+    var multiStory = Object.keys(storiesSeen).length > 1;
+    // grupos por era: la lista ya va en orden cronológico, así que basta con
+    // abrir grupo cuando cambia la era del documento
+    var groups = [];
     list.forEach(function (d) {
-      var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
-      html += '<li class="dp-entry' + (d.kind === 'image' ? ' dp-image' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
-        '<button type="button" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label) + '">' +
-        '<span class="dp-year">' + S.esc(span) + '</span>' +
-        '<span class="dp-label">' + S.esc(d.label) + '</span>' +
-        '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' +
-        '</button></li>';
+      var era = eraOf(d.year);
+      if (!groups.length || groups[groups.length - 1].era !== era) groups.push({ era: era, docs: [] });
+      groups[groups.length - 1].docs.push(d);
+    });
+    var html = '';
+    groups.forEach(function (g) {
+      html += '<li class="dp-group-head"><span class="dp-group-name">' +
+        S.esc(g.era ? g.era.name : 'Sin era') + '</span>' +
+        '<span class="dp-group-count">' + g.docs.length + '</span></li>';
+      g.docs.forEach(function (d) {
+        var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
+        html += '<li class="dp-entry' + (d.kind === 'image' ? ' dp-image' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
+          '<button type="button" data-doc-ref="' + S.esc(d.id) + '" title="' + S.esc(d.label + ' — ' + d.storyTitle) + '">' +
+          '<span class="dp-year">' + S.esc(span) + '</span>' +
+          '<span class="dp-label">' + S.esc(d.label) + '</span>' +
+          (multiStory ? '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' : '') +
+          '</button></li>';
+      });
     });
     dom.dpList.innerHTML = html;
     if (!state.docs.length) {
