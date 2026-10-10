@@ -458,6 +458,7 @@ const exploreMain = `<main class="explore" data-explore>
     </div>
     <div class="sp-foot">
       <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button>
+      <p class="sp-legal">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</p>
     </div>
   </aside>
   <aside class="docs-panel" aria-label="Documentos">

@@ -1179,6 +1179,20 @@
     return null;
   }
 
+  // eras plegadas en el panel de documentos (por nombre, persistidas)
+  var ERAS_KEY = 'semiesfera.collapsedEras';
+  var collapsedEras = new Set(S.storageGet(ERAS_KEY, []) || []);
+
+  function toggleEra(name, groupEl) {
+    if (collapsedEras.has(name)) collapsedEras.delete(name);
+    else collapsedEras.add(name);
+    S.storageSet(ERAS_KEY, Array.from(collapsedEras));
+    var collapsed = collapsedEras.has(name);
+    groupEl.classList.toggle('collapsed', collapsed);
+    var btn = groupEl.querySelector('.dp-group-head');
+    if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
+  }
+
   function renderDocsPanel() {
     if (!dom.dpList) return;
     var list = filteredDocs();
@@ -1196,9 +1210,14 @@
     });
     var html = '';
     groups.forEach(function (g) {
-      html += '<li class="dp-group-head"><span class="dp-group-name">' +
-        S.esc(g.era ? g.era.name : 'Sin era') + '</span>' +
-        '<span class="dp-group-count">' + g.docs.length + '</span></li>';
+      var name = g.era ? g.era.name : 'Sin era';
+      var collapsed = collapsedEras.has(name);
+      html += '<li class="dp-group' + (collapsed ? ' collapsed' : '') + '">' +
+        '<button type="button" class="dp-group-head" data-era-toggle="' + S.esc(name) + '" aria-expanded="' + !collapsed + '">' +
+        '<span class="dp-group-name">' + S.esc(name) + '</span>' +
+        '<span class="dp-group-count">' + g.docs.length + '</span>' +
+        '<span class="dp-group-caret" aria-hidden="true"></span>' +
+        '</button><ol class="dp-group-list">';
       g.docs.forEach(function (d) {
         var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
         html += '<li class="dp-entry' + (d.kind === 'image' ? ' dp-image' : '') + '" data-dp-doc="' + S.esc(d.id) + '">' +
@@ -1208,6 +1227,7 @@
           (multiStory ? '<span class="dp-story">' + S.esc(d.storyTitle) + '</span>' : '') +
           '</button></li>';
       });
+      html += '</ol></li>';
     });
     dom.dpList.innerHTML = html;
     if (!state.docs.length) {
@@ -1418,6 +1438,8 @@
       if (hideBtn) { setPanel(hideBtn.getAttribute('data-toggle-panel'), false); return; }
       var showBtn = e.target.closest('[data-show-panel]');
       if (showBtn) { setPanel(showBtn.getAttribute('data-show-panel'), true); return; }
+      var eraBtn = e.target.closest('[data-era-toggle]');
+      if (eraBtn) { toggleEra(eraBtn.getAttribute('data-era-toggle'), eraBtn.closest('.dp-group')); return; }
       var docBtn = e.target.closest('[data-doc-ref]');
       if (docBtn) { openReader(docBtn.getAttribute('data-doc-ref')); }
     });

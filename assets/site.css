@@ -384,6 +384,7 @@ figure.doc { margin: 0; }
   padding: 8px 16px;
   text-align: right;
 }
+.sp-legal { margin: 8px 0 0; color: var(--text-dim); font-size: 11px; line-height: 1.5; }
 
 /* -- panel de documentos (lado derecho) ------------------------------------------------ */
 
@@ -440,18 +441,25 @@ figure.doc { margin: 0; }
 .dp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .dp-none { color: var(--text-dim); font-size: 13px; line-height: 1.5; margin: 0; padding: 4px 6px; }
 
-/* cabecera de grupo (era): pegajosa sobre la lista al hacer scroll */
+/* cabecera de grupo (era): botón plegable, pegajoso al hacer scroll */
 .dp-group-head {
   position: sticky; top: 0; z-index: 1;
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  display: flex; align-items: baseline; gap: 8px;
+  width: 100%; text-align: left; cursor: pointer;
   margin: 10px 0 3px; padding: 5px 8px;
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--line);
+  border: 0; border-bottom: 1px solid var(--line);
+  color: var(--text-dim); font: inherit;
   font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--text-dim);
 }
-.dp-group-head:first-child { margin-top: 0; }
+.dp-group-head:hover { background: var(--bg-soft); color: var(--text); }
+.dp-group:first-child .dp-group-head { margin-top: 0; }
 .dp-group-count { flex: none; font-size: 11px; opacity: 0.8; }
+.dp-group-caret { flex: none; margin-left: auto; font-size: 10px; line-height: 1; }
+.dp-group-caret::before { content: '▾'; display: inline-block; transition: transform 0.15s ease; }
+.dp-group.collapsed .dp-group-caret::before { transform: rotate(-90deg); }
+.dp-group-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.dp-group.collapsed .dp-group-list { display: none; }
 
 /* fila compacta de una línea: año · etiqueta · (historia) */
 .dp-entry {
