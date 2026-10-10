@@ -304,7 +304,7 @@ const indexData = {
 // Plantillas
 // ---------------------------------------------------------------------------
 
-function layout({ prefix, title, desc, main, script = null, inlineIndex = true }) {
+function layout({ prefix, title, desc, main, script = null, inlineIndex = true, foot = true }) {
   const p = prefix;
   return `<!doctype html>
 <html lang="es">
@@ -319,6 +319,7 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true }
 </head>
 <body>
 ${main}
+${foot ? `<footer class="site-foot">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</footer>` : ''}
 <script src="${p}assets/core.js"></script>
 ${script ? `<script src="${p}assets/${script}.js"></script>` : ''}
 </body>
@@ -519,7 +520,8 @@ writeOut('explorar/index.html', layout({
   title: 'Explorar — Semiesfera',
   desc: 'Mapa y línea de tiempo del mundo de Semiesfera, con lo que has desbloqueado leyendo.',
   main: exploreMain,
-  script: 'explore'
+  script: 'explore',
+  foot: false
 }));
 
 for (const s of published) {
@@ -575,6 +577,7 @@ writeOut('rss.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <link>${SITE_URL}</link>
 <description>Un mundo que empieza sin mapa y se dibuja al leer.</description>
 <language>es</language>
+<copyright>© ${TODAY.slice(0, 4)} Darío García. Texto e imágenes: todos los derechos reservados.</copyright>
 ${published.map((s) => `  <item>
     <title>${escapeHtml(s.title)}</title>
     <link>${SITE_URL}historias/${s.id}/</link>

@@ -35,6 +35,12 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 
 .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 64px; }
 
+.site-foot {
+  max-width: 880px; margin: 0 auto; padding: 0 20px 36px;
+  color: var(--text-dim); font-size: 13px;
+}
+.site-foot a { color: inherit; }
+
 /* -- botones -------------------------------------------------------------------- */
 
 .btn {

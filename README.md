@@ -125,6 +125,7 @@ Pages (requiere que el repo sea público o un plan de pago). Mientras tanto,
 
 ## Créditos
 
-- Código: MIT (ver `LICENSE`).
-- Contenido del mundo (`content/`): © el autor; el texto de las historias se
-  publica en la web y en los PDF adjuntos.
+- Código (`assets/`, `tools/`, `build.mjs`): MIT (ver `LICENSE`).
+- Contenido del mundo (`content/`): © 2026 Darío García, todos los derechos
+  reservados (ver `CONTENT.md`). El texto de las historias se publica en la
+  web y en los PDF adjuntos para leerse aquí, no para su reutilización.
