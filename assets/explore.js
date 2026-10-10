@@ -977,7 +977,6 @@
     state.readerDoc = docId;
     if (revealed) {
       var hadPlace = state.sel.place;
-      markDocSeen(docId);
       state.sel.doc = docId;
       state.sel.place = null;
       syncUrl();
@@ -1324,24 +1323,6 @@
     groupEl.classList.toggle('collapsed', collapsed);
     var btn = groupEl.querySelector('.dp-group-head');
     if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
-  }
-
-  // -- progreso de exploración (documentos vistos) ----------------------------
-
-  var seenDocSet = null;
-  function getSeenDocSet() {
-    if (!seenDocSet) {
-      seenDocSet = {};
-      S.getSeenDocs().forEach(function (id) { seenDocSet[id] = 1; });
-    }
-    return seenDocSet;
-  }
-
-  function markDocSeen(id) {
-    if (!getSeenDocSet()[id]) {
-      seenDocSet[id] = 1;
-      S.markDocSeen(id);
-    }
   }
 
   function renderDocsPanel() {

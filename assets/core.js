@@ -7,7 +7,6 @@
   var BASE = window.SEMI_BASE || '';
   var KEY = 'semiesfera.progress';
   var SEEN_KEY = 'semiesfera.seenPieces';
-  var SEEN_DOCS_KEY = 'semiesfera.seenDocs';
   var NS = 'http://www.w3.org/2000/svg';
 
   function u(rel) { return BASE + rel; }
@@ -58,7 +57,6 @@
     try {
       localStorage.removeItem(KEY);
       localStorage.removeItem(SEEN_KEY);
-      localStorage.removeItem(SEEN_DOCS_KEY);
     } catch (e) { /* nada */ }
   }
 
@@ -199,50 +197,23 @@
     storageSet(SEEN_KEY, ids);
   }
 
-  // -- documentos vistos (progreso de exploración) ------------------------------------
-
-  function getSeenDocs() {
-    var v = storageGet(SEEN_DOCS_KEY, []);
-    return Array.isArray(v) ? v : [];
-  }
-
-  function markDocSeen(id) {
-    var seen = getSeenDocs();
-    if (seen.indexOf(id) >= 0) return false;
-    seen.push(id);
-    storageSet(SEEN_DOCS_KEY, seen);
-    return true;
-  }
-
-  // progreso sobre lo revelado: documentos vistos / documentos de historias leídas
-  function explorationProgress(idx) {
-    var stories = (idx || index()).stories || [];
-    var read = getRead();
-    var ids = {};
-    var total = 0;
-    stories.forEach(function (s) {
-      if (read[s.id] && s.documents) {
-        total += s.documents.length;
-        s.documents.forEach(function (d) { ids[d.id] = 1; });
-      }
-    });
-    var seen = getSeenDocs().filter(function (id) { return ids[id]; }).length;
-    return { total: total, seen: seen };
-  }
-
-  // línea de progreso en la portada (solo si hay algo revelado y visto)
+  // línea de progreso en la portada (métrica: historias leídas / publicadas)
   function initLandingProgress() {
     var el = document.querySelector('[data-landing-progress]');
     if (!el) return;
     var idx = window.SEMI_INDEX ? Promise.resolve(index()) : fetchIndexData();
     idx.then(function (rec) {
-      var p = explorationProgress(rec);
-      if (!p.total || !p.seen) return;
-      var pct = Math.round((p.seen / p.total) * 100);
+      var stories = ((rec && rec.stories) || (window.SEMI_INDEX ? index().stories : [])) || [];
+      var read = getRead();
+      var total = stories.length;
+      var n = 0;
+      stories.forEach(function (s) { if (read[s.id]) n++; });
+      if (!total || !n) return;
+      var pct = Math.round((n / total) * 100);
       el.innerHTML = '<span class="mini-bar"><i style="width:' + pct + '%"></i></span>' +
-        '<span>' + (p.seen >= p.total
-          ? 'Has visto todo lo revelado hasta ahora — ' + p.total + ' documentos'
-          : 'Has explorado el ' + pct + '% de lo revelado — ' + p.seen + ' de ' + p.total + ' documentos') + '</span>';
+        '<span>' + (n >= total
+          ? 'Has leído todo lo publicado hasta ahora — ' + n + (n === 1 ? ' historia' : ' historias')
+          : 'Has leído el ' + pct + '% de lo publicado — ' + n + ' de ' + total + ' historias') + '</span>';
       el.hidden = false;
     }).catch(function () { /* sin datos, sin línea */ });
   }
@@ -325,9 +296,6 @@
     toast: toast,
     getSeenPieces: getSeenPieces,
     setSeenPieces: setSeenPieces,
-    getSeenDocs: getSeenDocs,
-    markDocSeen: markDocSeen,
-    explorationProgress: explorationProgress,
     readBar: readBar
   };
 })();
