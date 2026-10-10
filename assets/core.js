@@ -184,7 +184,34 @@
     }
   });
 
+  // telón de fondo de la portada: solo las piezas reveladas por las historias
+  // que el lector ha marcado como leídas (sin progreso, sin mapa)
+  function initLandingBackdrop() {
+    var holder = document.querySelector('[data-landing-map]');
+    if (!holder) return;
+    fetchIndexData().then(function (rec) {
+      var read = getRead();
+      var ids = ((rec && rec.stories) || []).filter(function (s) { return read[s.id]; }).map(function (s) { return s.id; });
+      return ids.length ? Promise.all(ids.map(fetchStoryData)) : null;
+    }).then(function (files) {
+      if (!files) return;
+      var svg = holder.querySelector('svg');
+      if (!svg) return;
+      var html = '';
+      var seen = {};
+      files.forEach(function (f) {
+        (f.pieces || []).forEach(function (p) {
+          if (seen[p.id]) return;
+          seen[p.id] = 1;
+          html += '<image href="' + u(p.file) + '" x="' + p.x + '" y="' + p.y + '" width="' + p.width + '" height="' + p.height + '"/>';
+        });
+      });
+      svg.innerHTML = html;
+    }).catch(function () { /* sin datos: sin mapa */ });
+  }
+
   initLandingProgress();
+  initLandingBackdrop();
 
   // -- piezas vistas (para el fundido de revelado) ------------------------------------
 

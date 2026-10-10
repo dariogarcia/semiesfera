@@ -329,13 +329,12 @@ ${script ? `<script src="${p}assets/${script}.js"></script>` : ''}
 // --- portada ------------------------------------------------------------------
 
 function landingMain() {
-  // telón de fondo: el mapa tal como lo deja lo publicado hasta ahora
-  // (solo piezas publicadas — nunca se adelanta territorio sin revelar)
+  // telón de fondo dinámico: solo las piezas de las historias que el lector
+  // ha marcado como leídas (se rellena en core.js) — nunca se adelanta
+  // territorio: un lector sin progreso no ve mapa
   const size = mapData.size;
-  const backdrop = [...publishedPieces.values()].map((p) =>
-    `<image href="${p.file}" x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}"/>`).join('');
   return `<main class="landing">
-  <div class="landing-map" aria-hidden="true"><svg viewBox="0 0 ${size.width} ${size.height}" preserveAspectRatio="xMidYMid slice">${backdrop}</svg></div>
+  <div class="landing-map" data-landing-map aria-hidden="true"><svg viewBox="0 0 ${size.width} ${size.height}" preserveAspectRatio="xMidYMid slice"></svg></div>
   <div class="landing-inner">
     <p class="landing-welcome">Bienvenido a</p>
     <h1>la Semiesfera</h1>
