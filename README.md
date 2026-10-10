@@ -56,18 +56,21 @@ content/            el mundo, editado a mano
   complete/         mapa completo como único archivo
   pieces/           imágenes de las piezas (PNG enmascarados por lande)
   stories/<id>/     story.md (frontmatter + cuerpo), cover.svg, story.pdf, docs/
+  sources/          fuentes Pandoc/LaTeX de las historias (read-only tras importar)
 assets/             CSS y JS del cliente (se copian al construir)
-tools/              importador de historias, generador del mapa, editor de lugares, servidor dev, smoke test
+tools/              importador de historias, re-render de documentos, generador del mapa, editor de lugares, servidor dev, smoke test
 build.mjs           generador del sitio (Node, sin dependencias)
+renders/            intermedios de xelatex (ignorada por git)
 public/             salida del build (ignorada por git)
 ```
 
 ## Desarrollo
 
 ```sh
-npm run build    # construye public/
-npm run serve    # sirve public/ en http://localhost:8178
-npm test         # build + smoke test
+npm run build         # construye public/
+npm run serve         # sirve public/ en http://localhost:8178
+npm test              # build + smoke test
+npm run render-doc -- <story-id> --doc 5   # re-renderiza un documento
 ```
 
 Requiere Node >= 18. Sin dependencias npm.
@@ -88,7 +91,8 @@ cuando cambie el mundo del generador (o renombrar landes):
 3. Importa la historia desde tu Markdown de Pandoc con
    `node tools/import-story.mjs content/sources/mi-historia.md --id mi-historia …`
    (genera `story.md`, `story.pdf`, `cover.svg` y los `docs/dN.png`; ajusta a
-   mano lo que quieras después), o créala a mano.
+   mano lo que quieras después), o créala a mano. Para retocar un documento
+   suelto después: `npm run render-doc -- mi-historia --doc 5`.
 4. Pon la fecha `publish` y haz push. Un workflow diario reconstruye y libera
    la historia en su fecha. Las comprobaciones del build frenan los errores
    antes de publicar.
@@ -108,18 +112,19 @@ El build falla con un mensaje claro si:
 - El build solo incluye las historias cuya fecha `publish` ha pasado, y solo
   las piezas del mapa que esas historias revelan. Lo no publicado nunca llega
   al navegador.
-- El repo se mantiene privado y los PDFs, imágenes y piezas no publicados se
-  mantienen fuera de `public/`.
+- El material aún no publicado vive fuera de este repo (en `input/`, que no
+  se distribuye); lo que está en `content/` ya es público o lo será en su
+  fecha `publish`.
 
 ## Despliegue
 
 El workflow `.github/workflows/deploy.yml` construye el sitio en cada push y
 una vez al día (para liberar historias en su fecha) y lo publica en GitHub
-Pages. En repos privados Pages requiere un plan de pago; mientras tanto,
+Pages (requiere que el repo sea público o un plan de pago). Mientras tanto,
 `npm run build && npm run serve` sirve el sitio completo en local.
 
 ## Créditos
 
 - Código: MIT (ver `LICENSE`).
-- Contenido del mundo (`content/`): material de ejemplo placeholder, reemplazar
-  por el material real.
+- Contenido del mundo (`content/`): © el autor; el texto de las historias se
+  publica en la web y en los PDF adjuntos.

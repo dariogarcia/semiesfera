@@ -79,6 +79,37 @@ Fuentes Type1 `.pfb` (p. ej. URW Gothic) se sustituyen por su clon OpenType
 al renderizar: `xdvipdfmx` falla de forma intermitente incrustándolas.
 Si algo sale raro, el camino manual de las secciones 3–4 siempre está disponible.
 
+## 1bis. Recetario rápido
+
+Las tres tareas habituales, sin leer el resto de la guía:
+
+**Importar una historia nueva** (fuente Pandoc/LaTeX → carpeta completa):
+
+```sh
+cp mi-historia.md content/sources/mi-historia.md
+node tools/import-story.mjs content/sources/mi-historia.md \
+  --id mi-historia --volume "…Volumen 12" --sequence 2 \
+  --publish 2026-11-01 --reveals p-ejemplo \
+  --place-map 1=deishe,2=taaku,3=taaku \
+  --img-place taaku --img-year 480 \
+  --summary "Una frase de gancho, sin spoilers."
+# revisa y ajusta metadatos: labels, alt, places/año de las imágenes
+git diff content/stories/mi-historia/story.md
+npm test
+```
+
+**Corregir un documento ya importado** (edita el doc-box en
+`content/sources/<id>.md` y re-renderiza solo ese):
+
+```sh
+node tools/render-doc.mjs <story-id> --doc 5            # o --all
+npm test
+```
+
+**Ajustar metadatos de un documento o imagen** (lugar, año, etiqueta…):
+edita `content/stories/<id>/story.md` — campos en §3.4bis y §3.6 — y
+`npm test`. No hace falta re-renderizar nada.
+
 ## 2. Antes de empezar: el mundo
 
 Una historia nueva puede necesitar cambios en los archivos del mundo. Revísalos
@@ -232,6 +263,18 @@ images:
     year: 480
 ```
 
+Campos por imagen:
+
+| Campo    | Obligatorio | Notas                                                            |
+| -------- | ----------- | ---------------------------------------------------------------- |
+| `file`   | sí          | Archivo dentro de la carpeta de la historia (se publica tal cual) |
+| `alt`    | sí          | Texto alternativo (accesibilidad); del `\caption` si lo había    |
+| `label`  | opcional    | Nombre corto para el panel de documentos (por defecto `Imagen N`) |
+| `caption`| opcional    | Pie bajo la imagen en la página de la historia                   |
+| `width`  | opcional    | % del ancho de columna; sin él, ancho natural                    |
+| `places` | sí          | ids de `places.json` (mismas reglas que los documentos)          |
+| `year`   | sí          | Entero; `yearEnd` opcional para rangos                           |
+
 Las imágenes son documentos visuales de pleno derecho: aparecen en el texto
 en su posición, en el panel de documentos, en la línea de tiempo y en el
 lector, y se filtran por lugar y año como cualquier documento. El importador
@@ -243,43 +286,49 @@ Los archivos fuente se buscan en `input/imgs/` (y `input/map_files/` para
 mapas): el importador resuelve las rutas `../../_Sources/...` del original.
 Guarda allí solo las imágenes usadas en la historia.
 
-### 3.5 Renderiza la imagen de cada documento
+### 3.5 Renderiza (o re-renderiza) la imagen de cada documento
 
-Cada documento necesita una imagen (`docs/d1.svg`, `docs/d1.png`…). La forma
-limpia es compilar el doc-box suelto con tu mismo preámbulo:
-
-`docs/render/d1.tex`:
-
-```latex
-\documentclass[border=8pt]{standalone}
-% PEGA AQUÍ TU header-includes COMPLETO (fuentes, tcbset, \docmeta,
-% \dline, \TaakuT, checklist...)
-\begin{document}
-\begin{tcolorbox}[audioguidebox, unbreakable, title={}]
-% ...el contenido del doc-box (sin las líneas ::: )...
-\end{tcolorbox}
-\end{document}
-```
+Cada documento necesita una imagen (`docs/d1.png`…). Con el fuente en
+`content/sources/<id>.md`, todo está automatizado:
 
 ```sh
-cd content/stories/vol11-…/docs/render
-xelatex d1.tex                     # produce d1.pdf
-pdf2svg d1.pdf ../d1.svg           # opción A: vectorial
-pdftoppm -png -r 160 d1.pdf ../d1  # opción B: bitmap (d1-1.png → renombra)
+# lista los doc-boxes del fuente con su Fuente/Año y qué PNG hay generado
+node tools/render-doc.mjs <story-id> --list
+
+# re-renderiza un documento suelto (sin tocar story.md ni el PDF)
+node tools/render-doc.mjs <story-id> --doc 5
+
+# re-renderiza todos
+node tools/render-doc.mjs <story-id> --all
 ```
+
+Qué hace: extrae el doc-box N del fuente, lo compila con
+`\documentclass{standalone}` usando tu propio preámbulo (`header-includes`),
+borde de 8pt y ancho de texto 494.5pt (~848px a 120dpi), y escribe
+`content/stories/<id>/docs/dN.png`. Si el PDF ocupa varias páginas, se unen
+verticalmente. Si `story.md` apuntaba al marcador `dN.svg`, se actualiza a
+`dN.png`. Los intermedios (`.tex`, `.log`) quedan en `renders/<id>/`
+(gitignored).
+
+`--adjustwidth` controla los `\begin{adjustwidth}{..}{..}` del fuente, que en
+un render suelto pueden dejar márgenes desiguales:
+
+| Valor    | Efecto                                             |
+| -------- | -------------------------------------------------- |
+| `keep`   | Tal cual (por defecto)                              |
+| `small`  | Reducidos a 0.5cm/0.5cm                             |
+| `strip`  | Eliminados (p. ej. cartas y diarios van mejor así)  |
 
 Notas:
 
-- Usa `unbreakable` en el `tcolorbox` (standalone no pagina); para cajas
-  `breakable` largas, parte el contenido o usa la opción bitmap recortando.
 - Necesitas las fuentes del preámbulo instaladas (GFS Didot, PT Mono, etc.).
-- Plan B sin archivos sueltos: compila el `story.pdf` completo y recorta cada
-  caja de las páginas con `pdftoppm` + tu editor de imágenes. Más trabajo, mismo
-  resultado.
-- La imagen se muestra a ~ancho de columna; 300–700 px de ancho va sobrado.
-
-Borra `docs/render/` al terminar (o no lo crees dentro de la carpeta de la
-historia) para no publicar los `.tex` intermedios.
+- El render no es bit a bit reproducible entre ejecuciones (antialiasing de
+  xdvipdfmx); mismo tamaño, píxeles ligeramente distintos. Normal.
+- Ajustes de_layout_ puntuales (p. ej. listas más compactas en el Manual de
+  Kalts'een) se editan en el doc-box del fuente y se re-renderizan.
+- La historia completa (los 12 a la vez) también se puede re-renderizar con
+  `node tools/import-story.mjs content/sources/<id>.md --id <id> --force …`,
+  pero rehace `story.md` entero: para retoques usa `render-doc.mjs`.
 
 ### 3.6 Escribe `story.md`
 
