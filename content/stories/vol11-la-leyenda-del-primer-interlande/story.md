@@ -14,7 +14,6 @@ documents:
     label: Audioguía del Museo Xunei Thun
     places:
       - deishe
-      - taaku
     year: 480
   - image: docs/d2.png
     alt: Cuerpo de Ciudadania, Gobierno de Taaku. Examen de Ciudadanía - Rúbrica de evaluación.
@@ -26,7 +25,6 @@ documents:
     alt: Panfleto de distribución pública. Manifiesto Noviembre Rosa.
     label: Manifiesto Noviembre Rosa
     places:
-      - taaku
       - etaan
     year: 390
   - image: docs/d4.png
@@ -34,36 +32,30 @@ documents:
     label: Bando del Administrador Real (Deishe)
     places:
       - deishe
-      - taaku
     year: -11
   - image: docs/d5.png
     alt: Enciclopedia de Rocas y Minerales - 4a Edición revisada.
     label: Enciclopedia de rocas y minerales
     places:
       - kalts-een
-      - taaku
     year: 878
   - image: docs/d6.png
     alt: Corte del Rey, Taaku. Edicto Real.
     label: Edicto Real de la Corte del Rey
     places:
       - etaan
-      - taaku
     year: -8
   - image: docs/d7.png
     alt: Celda-mina de Kalts'een, Taaku. Manual de gestión.
     label: Manual de gestión de la celda-mina Kalts'een
     places:
       - kalts-een
-      - taaku
     year: -37
   - image: docs/d8.png
     alt: Correspondencia personal de la familia Lihashi. Cartas manuscritas.
     label: Cartas de la familia Lihashi
     places:
       - kalts-een
-      - etaan
-      - taaku
     year: -7
     yearEnd: -1
   - image: docs/d9.png
@@ -71,29 +63,24 @@ documents:
     label: Acta del consejo minero de Kalts'een
     places:
       - kalts-een
-      - taaku
     year: 0
   - image: docs/d10.png
     alt: Correspondencia de la Corte del Rey, Etaan. Carta Manuscrita.
     label: Carta de la Corte del Rey de Etaan
     places:
       - kalts-een
-      - etaan
-      - taaku
     year: 0
   - image: docs/d11.png
     alt: Fortaleza de Kalts'een, Taaku. Diario personal.
     label: Diario de Shteek
     places:
       - kalts-een
-      - taaku
     year: 0
   - image: docs/d12.png
     alt: Museo Xunei Thun de Arte, Taaku. Audioguía para visitantes.
     label: Audioguía del Museo Xunei Thun (II)
     places:
       - deishe
-      - taaku
     year: 480
 images:
   - file: imgs/xunei_sopa/xunei_sopa_logo.jpeg
