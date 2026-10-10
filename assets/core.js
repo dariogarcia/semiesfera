@@ -126,6 +126,8 @@
   var dataCache = {};
 
   function fetchJSON(url) {
+    // cache-bust: la versión cambia solo cuando cambian los datos
+    if (window.SEMI_V && url.indexOf('?') < 0) url += '?v=' + window.SEMI_V;
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error('No se pudo cargar ' + url + ' (' + r.status + ')');
       return r.json();

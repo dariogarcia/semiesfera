@@ -112,7 +112,8 @@ for (const id of storyDirs) {
 function checkLinks(file) {
   const html = read(file);
   const refs = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1])
-    .filter((h) => !h.startsWith('http') && !h.startsWith('#') && !h.startsWith('mailto:') && !h.startsWith('data:'));
+    .filter((h) => !h.startsWith('http') && !h.startsWith('#') && !h.startsWith('mailto:') && !h.startsWith('data:'))
+    .map((h) => h.split('?')[0]);
   for (const ref of refs) {
     const target = path.resolve(PUBLIC, path.dirname(path.join(PUBLIC, file)), ref);
     let okPath = fs.existsSync(target) && fs.statSync(target).isFile();
@@ -122,6 +123,7 @@ function checkLinks(file) {
 }
 checkLinks('index.html');
 checkLinks('explorar/index.html');
+checkLinks('404.html');
 for (const s of index.stories) checkLinks(`historias/${s.id}/index.html`);
 
 console.log('');

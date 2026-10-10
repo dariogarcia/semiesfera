@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#0d151d"/>
+<rect x="28" y="28" width="1144" height="574" fill="none" stroke="#e2946b" stroke-width="2" opacity="0.5"/>
+<path d="M 100 480 L 265 310 L 375 420 L 505 260 L 645 440 L 785 330 L 935 465 L 1055 385 L 1105 480 Z" fill="#e2946b" opacity="0.9"/>
+<path d="M 100 480 H 1105 V 495 H 100 Z" fill="#e2946b" opacity="0.35"/>
+<text x="600" y="185" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="100" fill="#e8e0cf">la Semiesfera</text>
+<text x="600" y="248" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="28" letter-spacing="8" fill="#e2946b">UN MUNDO DE HISTORIAS POR REVELAR</text>
+</svg>

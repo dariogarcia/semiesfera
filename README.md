@@ -55,6 +55,7 @@ content/            el mundo, editado a mano
   eras.yaml         eras con nombre para la línea de tiempo
   complete/         mapa completo como único archivo
   pieces/           imágenes de las piezas (PNG enmascarados por lande)
+  site/             favicon y og-image (SVG fuente + PNG pre-renderizados)
   stories/<id>/     story.md (frontmatter + cuerpo), cover.svg, story.pdf, docs/
   sources/          fuentes Pandoc/LaTeX de las historias (read-only tras importar)
 assets/             CSS y JS del cliente (se copian al construir)

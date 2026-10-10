@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { splitFrontmatter, renderMarkdown, escapeHtml, parseYaml } from './tools/lib.mjs';
 
@@ -14,6 +15,12 @@ const OUT = path.join(ROOT, 'public');
 
 const TODAY = process.env.SEMIESFERA_TODAY || new Date().toISOString().slice(0, 10);
 const SITE_URL = (process.env.SEMIESFERA_URL || 'https://dariogarcia.github.io/semiesfera/').replace(/\/?$/, '/');
+
+// versiones para cache-busting: cambian cuando cambia el contenido que
+// versionan, no en cada build — un lector recurrente solo re-descarga lo nuevo
+const hashOf = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 10);
+const ASSET_V = hashOf(['site.css', 'core.js', 'explore.js', 'story.js']
+  .map((f) => fs.readFileSync(path.join(ASSETS, f))).join(''));
 
 const problems = [];
 const fail = (msg) => problems.push(msg);
@@ -304,7 +311,7 @@ const indexData = {
 // Plantillas
 // ---------------------------------------------------------------------------
 
-function layout({ prefix, title, desc, main, script = null, inlineIndex = true, foot = true }) {
+function layout({ prefix, title, desc, main, script = null, inlineIndex = true, foot = true, url = '' }) {
   const p = prefix;
   return `<!doctype html>
 <html lang="es">
@@ -313,15 +320,30 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true, 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(desc)}">
-<link rel="stylesheet" href="${p}assets/site.css">
+<link rel="canonical" href="${SITE_URL}${url}">
+<link rel="stylesheet" href="${p}assets/site.css?v=${ASSET_V}">
 <link rel="alternate" type="application/rss+xml" title="Semiesfera" href="${p}rss.xml">
-<script>window.SEMI_BASE=${jsonInline(p)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
+<link rel="icon" href="${p}icon.svg" type="image/svg+xml">
+<link rel="icon" href="${p}icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="${p}apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="la Semiesfera">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(desc)}">
+<meta property="og:url" content="${SITE_URL}${url}">
+<meta property="og:image" content="${SITE_URL}og-image.png">
+<meta property="og:locale" content="es">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(desc)}">
+<meta name="twitter:image" content="${SITE_URL}og-image.png">
+<script>window.SEMI_BASE=${jsonInline(p)};window.SEMI_V=${jsonInline(DATA_V)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
 </head>
 <body>
 ${main}
 ${foot ? `<footer class="site-foot">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</footer>` : ''}
-<script src="${p}assets/core.js"></script>
-${script ? `<script src="${p}assets/${script}.js"></script>` : ''}
+<script src="${p}assets/core.js?v=${ASSET_V}"></script>
+${script ? `<script src="${p}assets/${script}.js?v=${ASSET_V}"></script>` : ''}
 </body>
 </html>`;
 }
@@ -514,9 +536,15 @@ const copyDir = (from, to) => {
 };
 
 copyDir(ASSETS, path.join(OUT, 'assets'));
+copyDir(path.join(CONTENT, 'site'), OUT);
+
+// la versión de datos cambia solo cuando cambian los datos que carga el
+// navegador (index + historias publicadas), no en cada build
+const DATA_V = hashOf(JSON.stringify([indexData, ...[...records.values()]]));
 
 writeOut('index.html', layout({
   prefix: '',
+  url: '',
   title: 'Semiesfera — un mundo que se revela al leer',
   desc: 'Un ciclo de historias sobre un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
   main: landingMain(),
@@ -527,6 +555,7 @@ writeOut('index.html', layout({
 
 writeOut('explorar/index.html', layout({
   prefix: '../',
+  url: 'explorar/',
   title: 'Explorar — Semiesfera',
   desc: 'Mapa y línea de tiempo del mundo de Semiesfera, con lo que has desbloqueado leyendo.',
   main: exploreMain,
@@ -538,6 +567,7 @@ for (const s of published) {
   const rec = records.get(s.id);
   writeOut(`historias/${s.id}/index.html`, layout({
     prefix: '../../',
+    url: `historias/${s.id}/`,
     title: `${s.title} — Semiesfera`,
     desc: s.summary,
     main: storyMain(s, rec),
@@ -580,6 +610,26 @@ if (allPublished && fs.existsSync(authoredComplete)) {
 
 // RSS
 const rfc822 = (dateStr) => new Date(`${dateStr}T12:00:00Z`).toUTCString();
+// 404: se sirve en cualquier ruta no existente, así que todo va con URL
+// absoluta (los prefijos relativos no sirven aquí)
+writeOut('404.html', layout({
+  prefix: SITE_URL,
+  url: '',
+  title: 'Página no encontrada — Semiesfera',
+  desc: 'Esto todavía no existe — o quizá exista en una historia que no has leído.',
+  main: `<main class="landing">
+  <div class="landing-inner">
+    <p class="landing-welcome">Página no encontrada</p>
+    <h1>Error 404</h1>
+    <p class="landing-lead">Esto todavía no existe — o quizá exista en una historia que todavía no has leído.</p>
+    <p class="landing-cta"><a class="landing-enter" href="${SITE_URL}">Volver al inicio</a></p>
+  </div>
+</main>`,
+  script: null,
+  inlineIndex: false,
+  foot: false
+}));
+
 writeOut('rss.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
 <channel>
