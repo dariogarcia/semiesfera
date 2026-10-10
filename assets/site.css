@@ -31,6 +31,16 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* pulido de interfaz: selección, foco de teclado, barras de scroll */
+::selection { background: rgba(226, 148, 107, 0.4); color: #fff; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html { scrollbar-color: #2b3c50 transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2b3c50; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #3d5470; }
+::-webkit-scrollbar-corner { background: transparent; }
+
 h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25; }
 
 .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 64px; }
@@ -80,6 +90,8 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 /* -- portada ---------------------------------------------------------------------- */
 
 .landing {
+  position: relative;
+  overflow: hidden;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -90,7 +102,19 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
     radial-gradient(ellipse 70% 50% at 50% -10%, rgba(121, 182, 169, 0.07), transparent 60%),
     var(--sea);
 }
-.landing-inner { max-width: 640px; text-align: center; }
+/* telón de fondo: piezas del mapa publicadas, muy tenues y desvanecidas
+   hacia los bordes — nunca territorio sin revelar */
+.landing-map {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  filter: saturate(0.65);
+  -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 50%, #000 25%, transparent 75%);
+  mask-image: radial-gradient(ellipse 85% 80% at 50% 50%, #000 25%, transparent 75%);
+}
+.landing-map svg { width: 100%; height: 100%; display: block; }
+.landing-inner { position: relative; max-width: 640px; text-align: center; }
 .landing-welcome {
   font-family: var(--font-serif);
   font-size: 26px;
@@ -288,7 +312,9 @@ figure.doc { margin: 0; }
 .map-hint h2 { font-size: 26px; margin: 0; color: var(--text-dim); }
 .map-hint p { margin: 0; color: var(--text-dim); opacity: 0.8; max-width: 380px; }
 
-.place-g { cursor: pointer; outline: none; }
+.place-g { cursor: pointer; }
+/* al alejarse, los puntos con menos documentos prescinden de su etiqueta */
+.place-g.hide-label .place-label { display: none; }
 .place-g .place-dot { transition: r 0.1s; }
 .place-g.lit .place-dot { fill: #ffd9a8; stroke: #fff; }
 .place-g.lit .region-circle, .place-g.lit .region-poly { stroke: var(--accent); fill: rgba(226, 148, 107, 0.10); }
@@ -317,9 +343,17 @@ figure.doc { margin: 0; }
 .tl-empty { color: var(--text-dim); font-size: 14px; padding: 18px 16px; }
 .tl-hint { color: var(--text-dim); font-size: 12px; padding: 0 16px 6px; }
 
+/* cada era tiene un matiz propio — frío antes de la conexión, cálido en la
+   era de los landes, verdoso en la era de la semiesfera — que se repite en
+   las bandas del tiempo, sus rótulos y las cabeceras de grupo del panel */
 .era-band { fill: rgba(139, 160, 181, 0.07); }
-.era-band.alt { fill: rgba(139, 160, 181, 0.12); }
+.era-band.e0 { fill: rgba(139, 168, 196, 0.10); }
+.era-band.e1 { fill: rgba(226, 148, 107, 0.09); }
+.era-band.e2 { fill: rgba(121, 182, 169, 0.09); }
 .era-label { fill: var(--text-dim); font-size: 13px; font-family: var(--font-serif); font-style: italic; }
+.era-label.e0 { fill: #9fb2c8; }
+.era-label.e1 { fill: #d8a184; }
+.era-label.e2 { fill: #93c2b6; }
 .tl-axis { stroke: var(--text-dim); stroke-width: 1.5; }
 .tl-tick { stroke: var(--text-dim); stroke-width: 1; }
 .tl-tick.zero { stroke: var(--accent); stroke-width: 2; }
@@ -327,7 +361,7 @@ figure.doc { margin: 0; }
 .tl-tick-label.zero { fill: var(--accent); }
 .range-band { fill: rgba(226, 148, 107, 0.18); stroke: var(--accent); stroke-width: 1; }
 .range-band.preview { fill: rgba(226, 148, 107, 0.10); stroke-dasharray: 4 3; }
-.tl-doc { cursor: pointer; outline: none; }
+.tl-doc { cursor: pointer; }
 .tl-hit { fill: transparent; }
 .tl-point { stroke: #101820; stroke-width: 1.5; }
 .tl-doc.lit .tl-point { stroke: #fff; r: 9; }
@@ -454,6 +488,14 @@ figure.doc { margin: 0; }
   font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .dp-group-head:hover { background: var(--bg-soft); color: var(--text); }
+/* punto de color con el matiz de la era */
+.dp-group-name::before {
+  content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px; background: var(--text-dim); opacity: 0.75;
+}
+.dp-group-head.e0 .dp-group-name::before { background: #8ba0b5; }
+.dp-group-head.e1 .dp-group-name::before { background: var(--accent); }
+.dp-group-head.e2 .dp-group-name::before { background: var(--ok); }
 .dp-group:first-child .dp-group-head { margin-top: 0; }
 .dp-group-count { flex: none; font-size: 11px; opacity: 0.8; }
 .dp-group-caret { flex: none; margin-left: auto; font-size: 10px; line-height: 1; }
@@ -540,8 +582,9 @@ figure.doc { margin: 0; }
 .story-sheet {
   position: relative;
   width: min(100%, 760px);
-  background: var(--bg-panel);
-  border: 1px solid var(--line);
+  /* tono cálido, a media luz de vela: separa la narrativa del chrome azul de la app */
+  background: #1d1a14;
+  border: 1px solid #3b3325;
   border-radius: 14px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   padding: 40px 48px 32px;
@@ -566,6 +609,16 @@ figure.doc { margin: 0; }
 
 /* tipografía del texto de la historia */
 .story-sheet-body { font-family: var(--font-serif); font-size: 18px; line-height: 1.75; }
+/* capital inicial del relato */
+.story-body > p:first-child::first-letter,
+.story-sheet-body > p:first-child::first-letter {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.8;
+  padding: 0.05em 0.1em 0 0;
+  color: var(--accent);
+  font-weight: 600;
+}
 .story-sheet-body p { margin: 0 0 1.1em; }
 .story-sheet-body h2 { font-family: var(--font-serif); font-size: 26px; margin: 1.7em 0 0.5em; }
 .story-sheet-body h3 { font-family: var(--font-serif); font-size: 21px; margin: 1.5em 0 0.4em; }
@@ -596,6 +649,15 @@ figure.doc { margin: 0; }
 .reader-caption-meta { margin: 0; }
 .reader-close { position: absolute; top: 18px; right: 18px; background: rgba(13, 21, 29, 0.85); z-index: 2; }
 .reader-nav { position: absolute; bottom: 22px; left: 0; right: 0; display: flex; justify-content: center; gap: 12px; }
+
+/* -- movimiento reducido -------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-fade { animation: none; }
+  .toast { transition: none; }
+  .landing-enter { transition: none; }
+  .dp-group-caret::before { transition: none; }
+}
 
 /* -- móvil ------------------------------------------------------------------------------- */
 

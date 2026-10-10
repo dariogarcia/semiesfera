@@ -207,6 +207,9 @@
 
   function updateMapScale() {
     var k = view.k;
+    // umbral de zoom a partir del cual se muestra la etiqueta de un punto:
+    // los lugares con más documentos la conservan antes al alejarse
+    var LABEL_MIN_K = [0, 0.55, 0.95];
     placeEls.forEach(function (g) {
       g.querySelectorAll('.place-dot').forEach(function (c) { c.setAttribute('r', 9 / k); });
       g.querySelectorAll('.place-hit').forEach(function (c) { c.setAttribute('r', 16 / k); });
@@ -214,6 +217,8 @@
       g.querySelectorAll('.region-circle').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
       g.querySelectorAll('.region-poly').forEach(function (c) { c.setAttribute('stroke-width', 2 / k); c.setAttribute('stroke-dasharray', (6 / k) + ' ' + (5 / k)); });
       g.querySelectorAll('.region-label').forEach(function (t) { t.setAttribute('font-size', 15 / k); });
+      var tier = g.getAttribute('data-label-tier');
+      if (tier != null) g.classList.toggle('hide-label', k < LABEL_MIN_K[+tier]);
     });
   }
 
@@ -296,6 +301,7 @@
         rt.textContent = place.name;
       }
       placeEls.set(place.id, g);
+      if (geom.type === 'point') g.setAttribute('data-label-tier', count >= 3 ? 0 : count === 2 ? 1 : 2);
 
       g.addEventListener('mouseenter', function () { setPreview({ type: 'place', id: place.id }, true); });
       g.addEventListener('mouseleave', function () { setPreview(null); });
@@ -464,8 +470,9 @@
       var x1 = Math.max(PAD, xOf(era.from));
       var x2 = Math.min(TLW - PAD, xOf(era.to));
       if (x2 - x1 < 4) return;
-      svgEl('rect', { class: 'era-band' + (i % 2 ? ' alt' : ''), x: x1, y: 0, width: x2 - x1, height: PLOT_H }, svg);
-      var t = svgEl('text', { class: 'era-label', x: x1 + 8, y: 18 }, svg);
+      var eCls = ' e' + Math.min(i, 3);
+      svgEl('rect', { class: 'era-band' + eCls, x: x1, y: 0, width: x2 - x1, height: PLOT_H }, svg);
+      var t = svgEl('text', { class: 'era-label' + eCls, x: x1 + 8, y: 18 }, svg);
       // si el nombre no cabe en su banda, se parte en dos líneas por el guion
       if (era.name.indexOf(' - ') > 0 && era.name.length * 6.2 > x2 - x1 - 16) {
         var parts = era.name.split(' - ');
@@ -1212,8 +1219,10 @@
     groups.forEach(function (g) {
       var name = g.era ? g.era.name : 'Sin era';
       var collapsed = collapsedEras.has(name);
+      var eIdx = g.era ? state.eras.indexOf(g.era) : -1;
+      var eCls = eIdx >= 0 && eIdx < 3 ? ' e' + eIdx : '';
       html += '<li class="dp-group' + (collapsed ? ' collapsed' : '') + '">' +
-        '<button type="button" class="dp-group-head" data-era-toggle="' + S.esc(name) + '" aria-expanded="' + !collapsed + '">' +
+        '<button type="button" class="dp-group-head' + eCls + '" data-era-toggle="' + S.esc(name) + '" aria-expanded="' + !collapsed + '">' +
         '<span class="dp-group-name">' + S.esc(name) + '</span>' +
         '<span class="dp-group-count">' + g.docs.length + '</span>' +
         '<span class="dp-group-caret" aria-hidden="true"></span>' +
