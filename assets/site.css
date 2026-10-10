@@ -201,6 +201,27 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* tooltip flotante (mapa + línea de tiempo) */
+.tip {
+  position: fixed;
+  z-index: 110;
+  max-width: 280px;
+  padding: 7px 10px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: 12.5px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.tip[hidden] { display: none; }
+.tip span { display: block; }
+.tip .tip-title { font-weight: 600; }
+.tip .tip-meta { color: var(--text-dim); white-space: nowrap; }
+
+
 /* -- página de historia ------------------------------------------------------------ */
 
 .story .volume { margin: 26px 0 2px; }

@@ -165,6 +165,79 @@
     state.complete = state.pieces.length >= state.index.totalPieces;
   }
 
+  // -- tooltip flotante (mapa + línea de tiempo) ---------------------------------
+
+  var tipEl = null;
+
+  function ensureTip() {
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'tip';
+      tipEl.setAttribute('role', 'tooltip');
+      tipEl.hidden = true;
+      document.body.appendChild(tipEl);
+    }
+    return tipEl;
+  }
+
+  function placeTip(x, y) {
+    var t = ensureTip();
+    var w = t.offsetWidth, h = t.offsetHeight;
+    if (x + w > window.innerWidth - 8) x = x - w - 28;
+    if (y + h > window.innerHeight - 8) y = y - h - 28;
+    t.style.left = x + 'px';
+    t.style.top = y + 'px';
+  }
+
+  function showTip(html, e) {
+    var t = ensureTip();
+    t.innerHTML = html;
+    t.hidden = false;
+    placeTip(e.clientX + 14, e.clientY + 16);
+  }
+
+  function showTipNear(el, html) {
+    var r = el.getBoundingClientRect();
+    showTip(html, { clientX: r.left + r.width / 2, clientY: r.bottom + 2 });
+  }
+
+  function moveTip(e) {
+    if (!tipEl || tipEl.hidden) return;
+    placeTip(e.clientX + 14, e.clientY + 16);
+  }
+
+  function hideTip() {
+    if (tipEl) tipEl.hidden = true;
+  }
+
+  function docsSpan(docs) {
+    var ys = [];
+    docs.forEach(function (d) {
+      ys.push(d.year);
+      if (d.yearEnd != null) ys.push(d.yearEnd);
+    });
+    return S.fmtSpan(Math.min.apply(null, ys), Math.max.apply(null, ys));
+  }
+
+  function placeTipHtml(place) {
+    var docs = docsAtPlace(place.id);
+    if (!docs.length) return '<span class="tip-title">' + S.esc(place.name) + '</span>';
+    return '<span class="tip-title">' + S.esc(place.name) + '</span>' +
+      '<span class="tip-meta">' + docs.length + (docs.length === 1 ? ' documento' : ' documentos') +
+      ' · ' + docsSpan(docs) + '</span>';
+  }
+
+  function docTipHtml(d) {
+    var span = d.yearEnd != null ? S.fmtSpan(d.year, d.yearEnd) : S.fmtYear(d.year);
+    return '<span class="tip-title">' + S.esc(d.label) + '</span>' +
+      '<span class="tip-meta">' + S.esc(span) + ' · ' + S.esc(d.storyTitle) + '</span>';
+  }
+
+  function clusterTipHtml(cl) {
+    return '<span class="tip-title">' + cl.docs.length + ' documentos juntos</span>' +
+      '<span class="tip-meta">' + docsSpan(cl.docs) + '</span>';
+  }
+
   // -- mapa ---------------------------------------------------------------------
 
   function piecesBbox() {
@@ -306,10 +379,11 @@
       placeEls.set(place.id, g);
       if (geom.type === 'point') g.setAttribute('data-label-tier', count >= 3 ? 0 : count === 2 ? 1 : 2);
 
-      g.addEventListener('mouseenter', function () { setPreview({ type: 'place', id: place.id }, true); });
-      g.addEventListener('mouseleave', function () { setPreview(null); });
-      g.addEventListener('focus', function () { setPreview({ type: 'place', id: place.id }, true); });
-      g.addEventListener('blur', function () { setPreview(null); });
+      g.addEventListener('mouseenter', function (e) { setPreview({ type: 'place', id: place.id }, true); showTip(placeTipHtml(place), e); });
+      g.addEventListener('mousemove', moveTip);
+      g.addEventListener('mouseleave', function () { setPreview(null); hideTip(); });
+      g.addEventListener('focus', function () { setPreview({ type: 'place', id: place.id }, true); showTipNear(g, placeTipHtml(place)); });
+      g.addEventListener('blur', function () { setPreview(null); hideTip(); });
       g.addEventListener('click', function (e) {
         e.stopPropagation();
         if (mapDragged) return;
@@ -359,6 +433,7 @@
         mapDragged = true;
         view.k = pinch.k;
         zoomAt(mx, my, d / pinch.dist);
+        hideTip();
         return;
       }
       if (drag && pointers.size === 1) {
@@ -373,6 +448,7 @@
         view.tx = drag.tx + dx;
         view.ty = drag.ty + dy;
         applyTransform();
+        if (mapDragged) hideTip();
       }
     });
 
@@ -396,6 +472,7 @@
       e.preventDefault();
       var rect = dom.viewport.getBoundingClientRect();
       zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.0016));
+      hideTip();
     }, { passive: false });
 
     dom.viewport.addEventListener('click', function (e) {
@@ -532,12 +609,16 @@
           var idx = parseInt(this.getAttribute('data-cluster'), 10);
           zoomToCluster(idx);
         });
-        g2.addEventListener('mouseenter', function () {
+        g2.addEventListener('mouseenter', function (e) {
           var idx = parseInt(this.getAttribute('data-cluster'), 10);
           var cl = clusters[idx];
-          if (cl) setPreview({ type: 'docs', ids: cl.docs.map(function (d) { return d.id; }) }, true);
+          if (cl) {
+            setPreview({ type: 'docs', ids: cl.docs.map(function (d) { return d.id; }) }, true);
+            showTip(clusterTipHtml(cl), e);
+          }
         });
-        g2.addEventListener('mouseleave', function () { setPreview(null); });
+        g2.addEventListener('mousemove', moveTip);
+        g2.addEventListener('mouseleave', function () { setPreview(null); hideTip(); });
         g2.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' || e.key === ' ') {
             var idx = parseInt(this.getAttribute('data-cluster'), 10);
@@ -581,10 +662,11 @@
     }, g);
     docEls.set(d.id, g);
 
-    g.addEventListener('mouseenter', function () { setPreview({ type: 'docs', ids: [d.id] }, true); });
-    g.addEventListener('mouseleave', function () { setPreview(null); });
-    g.addEventListener('focus', function () { setPreview({ type: 'docs', ids: [d.id] }, true); });
-    g.addEventListener('blur', function () { setPreview(null); });
+    g.addEventListener('mouseenter', function (e) { setPreview({ type: 'docs', ids: [d.id] }, true); showTip(docTipHtml(d), e); });
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', function () { setPreview(null); hideTip(); });
+    g.addEventListener('focus', function () { setPreview({ type: 'docs', ids: [d.id] }, true); showTipNear(g, docTipHtml(d)); });
+    g.addEventListener('blur', function () { setPreview(null); hideTip(); });
     g.addEventListener('click', function (e) {
       e.stopPropagation();
       if (tlSuppressClick) return;
@@ -617,6 +699,7 @@
 
     dom.tlSvg.addEventListener('wheel', function (e) {
       e.preventDefault();
+      hideTip();
       // desplazamiento horizontal: Mayús+rueda o gesto horizontal del trackpad
       var hUnits = e.shiftKey ? (e.deltaY || e.deltaX) : e.deltaX;
       if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
@@ -875,6 +958,7 @@
     if (!dom.reader) buildReader();
     updateReader();
     dom.reader.hidden = false;
+    hideTip();
   }
 
   function updateReader() {
