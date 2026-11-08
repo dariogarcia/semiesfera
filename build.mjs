@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { splitFrontmatter, renderMarkdown, escapeHtml, parseYaml } from './tools/lib.mjs';
+import { splitFrontmatter, renderMarkdown, escapeHtml, parseYaml, imageSize } from './tools/lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const CONTENT = path.join(ROOT, 'content');
@@ -19,39 +19,6 @@ const SITE_URL = (process.env.SEMIESFERA_URL || 'https://dariogarcia.github.io/s
 // analítica opcional (GoatCounter): código del sitio, p.ej. "midgoat.goatcounter.com".
 // Vacío = no se inyecta nada.
 const GOATCOUNTER = process.env.SEMIESFERA_GOATCOUNTER || '';
-
-// dimensiones de una imagen leyendo solo su cabecera (sin dependencias);
-// sirve para emitir width/height en los <img> y evitar saltos de layout (CLS)
-function imageSize(file) {
-  const buf = fs.readFileSync(file);
-  // PNG: firma de 8 bytes + chunk IHDR
-  if (buf.length > 24 && buf.toString('ascii', 12, 16) === 'IHDR') {
-    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
-  }
-  // WebP: RIFF....WEBP + VP8 (con pérdida) / VP8L (sin pérdida) / VP8X (extendido)
-  if (buf.length > 30 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') {
-    const fourcc = buf.toString('ascii', 12, 16);
-    if (fourcc === 'VP8 ') return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
-    if (fourcc === 'VP8L') {
-      const bits = buf.readUInt32LE(21);
-      return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-    }
-    if (fourcc === 'VP8X') return { width: 1 + buf.readUIntLE(24, 3), height: 1 + buf.readUIntLE(27, 3) };
-  }
-  // JPEG: recorrer segmentos hasta un SOFn
-  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
-    let o = 2;
-    while (o + 9 < buf.length) {
-      if (buf[o] !== 0xff) { o++; continue; }
-      const marker = buf[o + 1];
-      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-        return { height: buf.readUInt16BE(o + 5), width: buf.readUInt16BE(o + 7) };
-      }
-      o += 2 + buf.readUInt16BE(o + 2);
-    }
-  }
-  return null;
-}
 const dimsOf = (rel) => {
   const d = imageSize(path.join(CONTENT, rel));
   return d ? { w: d.width, h: d.height } : {};
