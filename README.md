@@ -130,6 +130,19 @@ una vez al día (para liberar historias en su fecha) y lo publica en GitHub
 Pages (requiere que el repo sea público o un plan de pago). Mientras tanto,
 `npm run build && npm run serve` sirve el sitio completo en local.
 
+## Analítica (opcional)
+
+[GoatCounter](https://www.goatcounter.com): sin cookies, compatible con GDPR,
+plan gratuito para sitios no comerciales.
+
+1. Crea una cuenta y elige un código (p. ej. `semiesfera.goatcounter.com`).
+2. En el repo: *Settings → Secrets and variables → Actions → New repository
+   secret*, nombre `GOATCOUNTER_CODE`, valor el código.
+3. En local, para probar: `SEMIESFERA_GOATCOUNTER=semiesfera.goatcounter.com npm run build`.
+
+Sin la variable/secret, el build no inyecta ningún script: el sitio queda
+limpio por defecto.
+
 ## Créditos
 
 - Código (`assets/`, `tools/`, `build.mjs`): MIT (ver `LICENSE`).

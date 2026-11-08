@@ -27,6 +27,9 @@ jobs:
           node-version: 24
       - name: Build
         run: node build.mjs
+        env:
+          # analítica opcional: código de GoatCounter (p.ej. "midgoat.goatcounter.com")
+          SEMIESFERA_GOATCOUNTER: ${{ secrets.GOATCOUNTER_CODE }}
       - name: Smoke test
         run: node tools/smoke.mjs
       - uses: actions/upload-pages-artifact@v3
