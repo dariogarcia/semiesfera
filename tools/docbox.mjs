@@ -47,12 +47,12 @@ export function extractHeaderIncludes(fmLines) {
   for (let i = start + 1; i < fmLines.length; i++) {
     const l = fmLines[i];
     if (/^[A-Za-z_-][A-Za-z0-9_-]*:/.test(l)) break;
-    const item = l.match(/^ {2}- (.*)$/);
+    const item = l.match(/^ *- (.*)$/);
     if (item) {
       if (item[1].trim() !== '|') out.push(item[1]);
       continue;
     }
-    if (/^ {2}-\s*$/.test(l)) continue;
+    if (/^ *-\s*$/.test(l)) continue;
     out.push(l.replace(/^ {2}/, ''));
   }
   return out.filter((l) => l.trim() !== '');
