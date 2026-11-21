@@ -313,6 +313,9 @@ const indexData = {
   mapSize: mapData.size,
   totalPieces: mapData.pieces.length,
   complete: { file: mapData.complete.file, width: mapData.size.width, height: mapData.size.height },
+  // capa de tierra sin lande: el runtime la recorta a un halo alrededor
+  // de las piezas reveladas (franja entre piezas publicadas)
+  ...(mapData.montanas ? { montanas: mapData.montanas } : {}),
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
     summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
@@ -601,6 +604,13 @@ for (const rec of records.values()) writeOut(`data/${rec.id}.json`, JSON.stringi
 
 for (const piece of publishedPieces.values()) {
   copyDir(path.join(CONTENT, piece.file), path.join(OUT, piece.file));
+}
+
+// capa de montañas: se publica siempre que exista (el halo del explorador
+// y de los minimapas la recortan en runtime según lo revelado)
+if (mapData.montanas) {
+  const montanasFile = path.join(CONTENT, mapData.montanas.file);
+  if (fs.existsSync(montanasFile)) copyDir(montanasFile, path.join(OUT, mapData.montanas.file));
 }
 
 // mapa completo: si existe el editado a mano y todas las piezas están

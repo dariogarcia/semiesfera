@@ -3,6 +3,7 @@
 //
 //   node tools/build-map.mjs [--geojson ruta] [--png ruta]
 //                            [--calib sx,sy,ox,oy] [--margin px]
+//                            [--montanas-only]
 //
 // Entradas (por defecto, las de input/map_files/ del repositorio):
 //   - GeoJSON de celdas (polígonos Voronoi con propiedades culture/type)
@@ -10,8 +11,15 @@
 // Salidas en content/:
 //   - pieces/p-lande-<c>.png  una pieza por zona de cultura (recorte + máscara)
 //   - complete/map.png        recorte del hemisferio descrito
+//   - montanas/montanas.png   tierra sin lande, paleta ≤256 (halo del explorador)
 //   - places.json             landes (polígonos) + puntos de historias existentes
 //   - map-pieces.json         lienzo, piezas y mapa completo
+//
+// Con --montanas-only se regenera solo la capa de montañas y se fusiona su
+// clave en el map-pieces.json existente, sin tocar piezas, places.json ni el
+// mapa completo. Útil cuando las piezas ya están publicadas y el par
+// geojson+PNG de origen no ha cambiado: pásalo con --geojson/--png explícitos
+// del par con que se generaron.
 //
 // La calibración (geocoordenadas → píxeles del PNG) se ajustó una vez con ICP
 // sobre los lagos; si el generador exporta a otra resolución se reescala
@@ -145,6 +153,130 @@ function encodePNG(width, height, rgba) {
   ]);
 }
 
+// -- cuantización a paleta ≤256 ------------------------------------------------------
+//
+// Convención del repo para imágenes generadas: el PNG sigue siendo RGBA de
+// 8 bits, pero al reducir los colores distintos baja la entropía y zlib lo
+// comprime ~4x (la capa de montañas pasa de ~920 KB a ~150 KB) sin paso
+// manual posterior. Median cut sobre los colores únicos ponderados por
+// recuento de píxeles; el RGB de los píxeles totalmente transparentes se
+// canoniza a 0 porque es invisible y solo engorda la paleta. Las cajas
+// nunca mezclan niveles de alfa (el borde antialias queda exacto) y el
+// presupuesto de cajas se reparte entre niveles proporcionalmente a sus
+// colores distintos.
+
+function quantizeColors(rgba, maxColors) {
+  const uniques = new Map();
+  for (let i = 0; i < rgba.length; i += 4) {
+    const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2], a = rgba[i + 3];
+    const t = a === 0;
+    const key = t ? 0 : r * 0x1000000 + g * 0x10000 + b * 0x100 + a;
+    let e = uniques.get(key);
+    if (!e) uniques.set(key, e = { key, r: t ? 0 : r, g: t ? 0 : g, b: t ? 0 : b, a, n: 0 });
+    e.n++;
+  }
+
+  // niveles de alfa: cada caja vive dentro de un solo nivel, así el alfa
+  // de cada píxel se conserva exacto (sólidos a=0/a=255 y borde antialias)
+  const levelMap = new Map();
+  for (const e of uniques.values()) {
+    let l = levelMap.get(e.a);
+    if (!l) levelMap.set(e.a, l = []);
+    l.push(e);
+  }
+  const levels = [...levelMap.values()];
+  if (levels.length > maxColors) fail('demasiados niveles de alfa para la paleta');
+
+  // presupuesto por nivel: proporcional a sus colores distintos, mínimo 1;
+  // el sobrante se reparte por déficit fraccional mayor
+  const totalU = uniques.size;
+  const quota = levels.map(l => Math.max(1, Math.floor(l.length * maxColors / totalU)));
+  let over = quota.reduce((s, q) => s + q, 0) - maxColors;
+  while (over > 0) {
+    let bi = 0;
+    for (let i = 1; i < quota.length; i++) if (quota[i] > quota[bi]) bi = i;
+    quota[bi]--; over--;
+  }
+  let under = maxColors - quota.reduce((s, q) => s + q, 0);
+  while (under > 0) {
+    let bi = -1, bf = -1;
+    for (let i = 0; i < levels.length; i++) {
+      if (quota[i] >= levels[i].length) continue;
+      const f = levels[i].length * maxColors / totalU - quota[i];
+      if (f > bf) { bf = f; bi = i; }
+    }
+    if (bi < 0) break;
+    quota[bi]++; under--;
+  }
+
+  const CH = ['r', 'g', 'b', 'a'];
+  function makeBox(colors) {
+    const lo = [255, 255, 255, 255], hi = [0, 0, 0, 0];
+    let n = 0;
+    for (const c of colors) {
+      n += c.n;
+      if (c.r < lo[0]) lo[0] = c.r;
+      if (c.r > hi[0]) hi[0] = c.r;
+      if (c.g < lo[1]) lo[1] = c.g;
+      if (c.g > hi[1]) hi[1] = c.g;
+      if (c.b < lo[2]) lo[2] = c.b;
+      if (c.b > hi[2]) hi[2] = c.b;
+      if (c.a < lo[3]) lo[3] = c.a;
+      if (c.a > hi[3]) hi[3] = c.a;
+    }
+    return { colors, n, lo, hi };
+  }
+
+  // parte la caja por la mediana ponderada de su eje más largo; null si ya
+  // es monocolar
+  function splitBox(box) {
+    let axis = 0;
+    for (let k = 1; k < 4; k++) if (box.hi[k] - box.lo[k] > box.hi[axis] - box.lo[axis]) axis = k;
+    if (box.hi[axis] === box.lo[axis]) return null;
+    const ch = CH[axis];
+    box.colors.sort((x, y) => x[ch] - y[ch]);
+    let acc = 0, cut = 0;
+    for (let i = 0; i < box.colors.length; i++) {
+      acc += box.colors[i].n;
+      if (acc >= box.n / 2) { cut = i + 1; break; }
+    }
+    if (cut < 1 || cut >= box.colors.length) cut = box.colors.length >> 1;
+    return [makeBox(box.colors.slice(0, cut)), makeBox(box.colors.slice(cut))];
+  }
+
+  let boxes = [];
+  levels.forEach(function (colors, li) {
+    let levelBoxes = [makeBox(colors)];
+    while (levelBoxes.length < quota[li]) {
+      let bi = -1, bn = -1;
+      for (let i = 0; i < levelBoxes.length; i++) {
+        if (levelBoxes[i].colors.length > 1 && levelBoxes[i].n > bn) { bn = levelBoxes[i].n; bi = i; }
+      }
+      if (bi < 0) break;
+      const parts = splitBox(levelBoxes[bi]);
+      if (!parts) break;
+      levelBoxes.splice(bi, 1, parts[0], parts[1]);
+    }
+    boxes = boxes.concat(levelBoxes);
+  });
+
+  boxes.forEach(function (box, idx) {
+    let r = 0, g = 0, b = 0, a = 0;
+    for (const c of box.colors) { r += c.r * c.n; g += c.g * c.n; b += c.b * c.n; a += c.a * c.n; }
+    box.pal = { r: Math.round(r / box.n), g: Math.round(g / box.n), b: Math.round(b / box.n), a: Math.round(a / box.n) };
+    for (const c of box.colors) c.idx = idx;
+  });
+
+  const out = Buffer.alloc(rgba.length);
+  for (let i = 0; i < rgba.length; i += 4) {
+    const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2], a = rgba[i + 3];
+    const key = a === 0 ? 0 : r * 0x1000000 + g * 0x10000 + b * 0x100 + a;
+    const p = boxes[uniques.get(key).idx].pal;
+    out[i] = p.r; out[i + 1] = p.g; out[i + 2] = p.b; out[i + 3] = p.a;
+  }
+  return { data: out, uniqueIn: uniques.size, uniqueOut: boxes.length };
+}
+
 // -- datos -------------------------------------------------------------------------
 
 console.log(`geojson: ${path.basename(GEOJSON)}`);
@@ -221,6 +353,60 @@ x0 = Math.max(0, Math.floor(x0 - MARGIN)); y0 = Math.max(0, Math.floor(y0 - MARG
 x1 = Math.min(W - 1, Math.ceil(x1 + MARGIN)); y1 = Math.min(H - 1, Math.ceil(y1 + MARGIN));
 const CW = x1 - x0 + 1, CH = y1 - y0 + 1;
 console.log(`lienzo del sitio: ${CW}x${CH} (recorte ${x0},${y0})`);
+
+// -- montañas (tierra sin lande) ------------------------------------------------------
+//
+// Capa con toda la tierra que no pertenece a ningún lande (y los lagos sin
+// lande vecino). El runtime la muestra recortada a un halo difuminado
+// alrededor de las piezas reveladas: sin ella, entre dos piezas publicadas
+// queda una franja negra. El recorte es runtime (no puede hornearse en el
+// build) porque depende de las piezas que cada lector ha revelado.
+
+const MONTANAS_ONLY = args.includes('--montanas-only');
+const SS = 2; // sobremuestreo de la máscara para suavizar bordes
+
+const wildCells = [];
+for (let i = 0; i < cells.length; i++) {
+  if (cells[i].type === 'ocean') continue; // el mar no es montaña
+  if (lakeCulture.get(i) || cells[i].culture) continue; // pertenece a un lande
+  wildCells.push(cells[i]);
+}
+const montanasDir = path.join(ROOT, 'content', 'montanas');
+fs.mkdirSync(montanasDir, { recursive: true });
+const mw = CW * SS, mh = CH * SS;
+const wildHi = new Uint8Array(mw * mh);
+for (const c of wildCells) fillPolygon(wildHi, mw, mh, c.ring, SS, x0, y0);
+const wildRgba = Buffer.alloc(CW * CH * 4);
+for (let y = 0; y < CH; y++) {
+  for (let x = 0; x < CW; x++) {
+    let n = 0;
+    for (let dy = 0; dy < SS; dy++) for (let dx = 0; dx < SS; dx++) n += wildHi[(y * SS + dy) * mw + x * SS + dx];
+    const di = (y * CW + x) * 4;
+    const si = ((y0 + y) * W + x0 + x) * 4;
+    wildRgba[di] = SRC[si]; wildRgba[di + 1] = SRC[si + 1]; wildRgba[di + 2] = SRC[si + 2];
+    wildRgba[di + 3] = Math.round(n * 255 / (SS * SS));
+  }
+}
+const wildQ = quantizeColors(wildRgba, 256);
+const montanasFile = path.join(montanasDir, 'montanas.png');
+fs.writeFileSync(montanasFile, encodePNG(CW, CH, wildQ.data));
+const montanasEntry = { file: 'montanas/montanas.png', x: 0, y: 0, width: CW, height: CH };
+console.log(`montañas: ${wildCells.length} celdas -> ${montanasEntry.file} (${CW}x${CH}, ${wildQ.uniqueIn} colores -> paleta ${wildQ.uniqueOut}, ${Math.round(fs.statSync(montanasFile).size / 1024)} KB)`);
+
+if (MONTANAS_ONLY) {
+  // verifica que el lienzo calculado coincide con el de las piezas ya
+  // publicadas y fusiona la clave sin reescribir nada más
+  const mpFile = path.join(ROOT, 'content', 'map-pieces.json');
+  if (!fs.existsSync(mpFile)) fail('no existe map-pieces.json; corre el build completo primero');
+  const mp = JSON.parse(fs.readFileSync(mpFile, 'utf8'));
+  if (mp.size.width !== CW || mp.size.height !== CH) {
+    fail(`el lienzo calculado (${CW}x${CH}) no coincide con el de map-pieces.json (${mp.size.width}x${mp.size.height}); ¿es el mismo par geojson+PNG?`);
+  }
+  mp.montanas = montanasEntry;
+  fs.writeFileSync(mpFile, JSON.stringify(mp, null, 2) + '\n');
+  console.log(`listo: montanas fusionada en map-pieces.json (${mp.pieces.length} piezas intactas)`);
+  process.exit(0);
+}
 
 // -- máscaras por lande -------------------------------------------------------------
 
@@ -348,7 +534,6 @@ for (const old of fs.readdirSync(piecesDir)) {
 
 const places = [];
 const pieces = [];
-const SS = 2; // sobremuestreo de la máscara para suavizar bordes
 
 // nombres de landes ya editados (se conservan entre regeneraciones)
 const placesFile = path.join(ROOT, 'content', 'places.json');
@@ -468,7 +653,8 @@ fs.writeFileSync(placesFile, JSON.stringify({ places: [...places, ...pointPlaces
 fs.writeFileSync(path.join(ROOT, 'content', 'map-pieces.json'), JSON.stringify({
   size: { width: CW, height: CH },
   pieces,
-  complete: { file: 'complete/map.png', width: CW, height: CH }
+  complete: { file: 'complete/map.png', width: CW, height: CH },
+  montanas: montanasEntry
 }, null, 2) + '\n');
 
 console.log(`listo: ${pieces.length} landes, ${pointPlaces.length} lugares puntuales conservados`);

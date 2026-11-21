@@ -325,8 +325,14 @@
     });
   }
 
+  // generaciones del mundo: buildMap puede reconstruirse (p. ej. al marcar
+  // una historia como leída); evita que una capa de montañas calculada
+  // contra las piezas antiguas aterrice en un mundo reconstruido
+  var worldGen = 0;
+
   function buildMap() {
     var size = state.index.mapSize;
+    var gen = ++worldGen;
     dom.world.style.width = size.width + 'px';
     dom.world.style.height = size.height + 'px';
     dom.world.innerHTML = '';
@@ -352,6 +358,21 @@
         img.style.height = p.height + 'px';
         if (seen.indexOf(p.id) < 0) img.classList.add('reveal-fade');
         dom.world.appendChild(img);
+      });
+      // montañas: tierra sin lande, visible como halo difuminado alrededor
+      // de lo revelado (debajo de las piezas)
+      S.montanasLayer(state.pieces, state.index).then(function (layer) {
+        if (!layer || gen !== worldGen) return;
+        var wild = document.createElement('img');
+        wild.src = layer.src;
+        wild.alt = '';
+        wild.className = 'map-piece map-montanas';
+        wild.draggable = false;
+        wild.style.left = '0px';
+        wild.style.top = '0px';
+        wild.style.width = layer.width + 'px';
+        wild.style.height = layer.height + 'px';
+        dom.world.insertBefore(wild, dom.world.firstChild);
       });
     }
 

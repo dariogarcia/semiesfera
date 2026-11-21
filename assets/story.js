@@ -46,6 +46,21 @@
       container.appendChild(img);
     });
 
+    // montañas: tierra sin lande, visible como halo difuminado alrededor
+    // de lo revelado (debajo de las piezas)
+    S.montanasLayer(pieces).then(function (layer) {
+      if (!layer) return;
+      var img = document.createElement('img');
+      img.src = layer.src;
+      img.alt = '';
+      img.className = 'map-piece map-montanas';
+      img.style.left = (-x0 * k) + 'px';
+      img.style.top = (-y0 * k) + 'px';
+      img.style.width = (layer.width * k) + 'px';
+      img.style.height = (layer.height * k) + 'px';
+      container.insertBefore(img, container.firstChild);
+    });
+
     var svg = svgEl('svg', {
       viewBox: x0 + ' ' + y0 + ' ' + (x1 - x0) + ' ' + (y1 - y0),
       class: 'minimap-overlay',

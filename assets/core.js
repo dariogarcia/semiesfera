@@ -191,7 +191,9 @@
   function initLandingBackdrop() {
     var holder = document.querySelector('[data-landing-map]');
     if (!holder) return;
-    fetchIndexData().then(function (rec) {
+    var rec = null;
+    fetchIndexData().then(function (r) {
+      rec = r;
       var read = getRead();
       var ids = ((rec && rec.stories) || []).filter(function (s) { return read[s.id]; }).map(function (s) { return s.id; });
       return ids.length ? Promise.all(ids.map(fetchStoryData)) : null;
@@ -200,15 +202,24 @@
       var svg = holder.querySelector('svg');
       if (!svg) return;
       var html = '';
+      var pieces = [];
       var seen = {};
       files.forEach(function (f) {
         (f.pieces || []).forEach(function (p) {
           if (seen[p.id]) return;
           seen[p.id] = 1;
+          pieces.push(p);
           html += '<image href="' + u(p.file) + '" x="' + p.x + '" y="' + p.y + '" width="' + p.width + '" height="' + p.height + '"/>';
         });
       });
       svg.innerHTML = html;
+      // montañas: el mismo halo difuminado que el explorador, debajo de
+      // las piezas (sin él, entre dos piezas queda una franja negra)
+      montanasLayer(pieces, rec).then(function (layer) {
+        if (!layer) return;
+        svg.insertAdjacentHTML('afterbegin',
+          '<image href="' + layer.src + '" x="0" y="0" width="' + layer.width + '" height="' + layer.height + '"/>');
+      });
     }).catch(function () { /* sin datos: sin mapa */ });
   }
 
@@ -224,6 +235,93 @@
 
   function setSeenPieces(ids) {
     storageSet(SEEN_KEY, ids);
+  }
+
+  // -- capa de montañas (tierra sin lande) ----------------------------------------
+  //
+  // La tierra que no pertenece a ningún lande se muestra como un halo
+  // difuminado alrededor de las piezas reveladas: sin esto, entre dos
+  // piezas publicadas queda una franja negra. El recorte se calcula en
+  // runtime porque depende de las piezas que cada lector ha revelado.
+
+  function loadImage(url) {
+    return new Promise(function (resolve, reject) {
+      var im = new Image();
+      im.onload = function () { resolve(im); };
+      im.onerror = function () { reject(new Error('no se pudo cargar ' + url)); };
+      im.src = url;
+    });
+  }
+
+  // desenfoque de caja separable sobre un Float32Array; varias pasadas
+  // se aproximan a una gaussiana sin depender de ctx.filter
+  function boxBlur(a, w, h, r, passes) {
+    var tmp = new Float32Array(a.length);
+    var n = 2 * r + 1;
+    var clampX = function (x) { return x < 0 ? 0 : x > w - 1 ? w - 1 : x; };
+    var clampY = function (y) { return y < 0 ? 0 : y > h - 1 ? h - 1 : y; };
+    for (var p = 0; p < passes; p++) {
+      for (var y = 0; y < h; y++) {
+        var base = y * w, sum = 0;
+        for (var k = -r; k <= r; k++) sum += a[base + clampX(k)];
+        for (var x = 0; x < w; x++) {
+          tmp[base + x] = sum / n;
+          sum += a[base + clampX(x + r + 1)] - a[base + clampX(x - r)];
+        }
+      }
+      for (var x2 = 0; x2 < w; x2++) {
+        var sum2 = 0;
+        for (var k2 = -r; k2 <= r; k2++) sum2 += tmp[clampY(k2) * w + x2];
+        for (var y2 = 0; y2 < h; y2++) {
+          a[y2 * w + x2] = sum2 / n;
+          sum2 += tmp[clampY(y2 + r + 1) * w + x2] - tmp[clampY(y2 - r) * w + x2];
+        }
+      }
+    }
+  }
+
+  // promesa -> { src, width, height } con las montañas recortadas al halo
+  // de las piezas dadas, o null si no hay capa / piezas
+  function montanasLayer(pieces, idx) {
+    var rec = idx || index();
+    var m = rec && rec.montanas;
+    if (!m || !pieces || !pieces.length) return Promise.resolve(null);
+    var jobs = [loadImage(u(m.file))].concat(pieces.map(function (p) {
+      return loadImage(u(p.file));
+    }));
+    return Promise.all(jobs).then(function (imgs) {
+      var wild = imgs[0];
+      var w = m.width, h = m.height;
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var ctx = c.getContext('2d', { willReadFrequently: true });
+      // máscara = unión difuminada de las piezas reveladas
+      for (var i = 1; i < imgs.length; i++) ctx.drawImage(imgs[i], pieces[i - 1].x, pieces[i - 1].y);
+      var data = ctx.getImageData(0, 0, w, h).data;
+      var a = new Float32Array(w * h);
+      for (var j = 0; j < a.length; j++) a[j] = data[j * 4 + 3] / 255;
+      boxBlur(a, w, h, 28, 3);
+      // remapea el difuminado: opaco junto a la tierra revelada,
+      // apagándose a unos 45 px
+      for (var j2 = 0; j2 < a.length; j2++) {
+        var t = (a[j2] - 0.06) / 0.29;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        a[j2] = t * t * (3 - 2 * t);
+      }
+      // pinta las montañas y recorta su alfa con la máscara
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(wild, m.x || 0, m.y || 0);
+      var out = ctx.getImageData(0, 0, w, h);
+      for (var j3 = 0; j3 < a.length; j3++) {
+        out.data[j3 * 4 + 3] = Math.round(a[j3] * out.data[j3 * 4 + 3]);
+      }
+      ctx.putImageData(out, 0, 0);
+      return new Promise(function (resolve) {
+        c.toBlob(function (blob) {
+          resolve(blob ? { src: URL.createObjectURL(blob), width: w, height: h } : null);
+        }, 'image/png');
+      });
+    }).catch(function () { return null; });
   }
 
   // línea de progreso en la portada (métrica: historias leídas / publicadas)
@@ -325,6 +423,7 @@
     toast: toast,
     getSeenPieces: getSeenPieces,
     setSeenPieces: setSeenPieces,
+    montanasLayer: montanasLayer,
     readBar: readBar
   };
 })();

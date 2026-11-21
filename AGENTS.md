@@ -24,6 +24,7 @@ Documentación humana completa (el porqué de todo): `docs/anadir-historias.md`.
 | `content/stories/<id>/` | Historia web: `story.md`, `docs/dN.png`, `imgs/`, `cover.svg`, `story.pdf` | Sí |
 | `content/places.json` | Lugares del mundo (polígonos/puntos) | Sí, con datos del humano |
 | `content/map-pieces.json` + `content/pieces/` | Piezas del mapa y sus recortes | Sí, con datos del humano |
+| `content/montanas/montanas.png` | Tierra sin lande (halo del explorador entre piezas) | No (la genera `build-map.mjs`) |
 | `content/eras.yaml` | Eras de la línea de tiempo | Rara vez |
 | `build.mjs`, `assets/`, `tools/` | Generador y runtime | Solo si falla algo |
 | `public/` | Salida del build | Nunca a mano (se regenera) |
@@ -36,6 +37,9 @@ node tools/check-volume.mjs <id>  # verificación mecánica de un volumen
 npm run serve                     # servir public/ en http://localhost:8178
 node tools/render-doc.mjs <id> --doc N   # re-renderizar un documento suelto
 node tools/build-map.mjs          # solo si cambió el generador del mundo
+node tools/build-map.mjs --montanas-only --geojson <par-geojson> --png <par-png>
+                                  # regenera solo la capa de montañas (ya cuantizada
+                                  # a paleta ≤256, sin paso manual) sin tocar piezas
 ```
 
 ---
