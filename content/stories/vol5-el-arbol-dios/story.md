@@ -1,7 +1,7 @@
 ---
 title: El árbol que fue dios
 volume: Historias con historia — Volumen 5
-publish: 2026-12-01
+publish: 2026-11-20
 cover: cover.svg
 pdf: story.pdf
 summary: "Mil años de la vida de un árbol: El Aman, hoy famoso por la fruta más pastosa e insípida de la semiesfera, fue dios en la selva de Amanar. Su historia, contada por viajeros, hospitales de campaña, circulares militares y catálogos de museo."
