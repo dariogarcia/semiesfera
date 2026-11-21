@@ -19,7 +19,7 @@ import {
   splitSource, extractBlockScalar, extractScalar, extractHeaderIncludes,
   braceContent, replaceMacro, removeMacro, extractFirstMacro,
   splitDocBoxes, parseDocmeta, parseYears, plainText, cleanForRender,
-  buildPreamble, runXelatex, renderDocPng
+  buildPreamble, runXelatex, renderDocPng, materializeInputs
 } from './docbox.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -357,7 +357,7 @@ function main() {
     const body = cleanForRender(src.body, { keepPages: true });
     const titleTex = `{\\centering{\\LARGE\\bfseries ${title}}\\par\\vspace{4pt}{\\small ${volume}}\\par\\vspace{2em}}\n`;
     const tex = `${pdfPreamble}\n\n\\begin{document}\n${titleTex}\n${body}\n\\end{document}\n`;
-    fs.writeFileSync(path.join(renderDir, 'story.tex'), tex);
+    fs.writeFileSync(path.join(renderDir, 'story.tex'), materializeInputs(tex, renderDir));
     try {
       const err = runXelatex('story.tex', renderDir);
       if (err) throw err;

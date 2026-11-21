@@ -38,6 +38,7 @@ function scalar(v) {
   v = v.trim();
   if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
   if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1).replace(/''/g, "'");
+  if (v === '[]') return []; // secuencia vacía en línea (p. ej. places: [])
   if (/^-?\d+$/.test(v)) return parseInt(v, 10);
   if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
   if (v === 'true' || v === 'false') return v === 'true';

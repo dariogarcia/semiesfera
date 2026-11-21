@@ -226,6 +226,26 @@ export const FONT_SUBS = [
 
 export const substituteFonts = (line) => FONT_SUBS.reduce((t, [re, sub]) => t.replace(re, sub), line);
 
+// El preámbulo puede \input{} estilos del autor (p. ej.
+// _Sources/latex/historias-estilos.tex) con fuentes que xdvipdfmx no sabe
+// incrustar en algunos PDF (URW Gothic combinada con otras rompe el
+// subsetting: «Parsing charstring failed»). Para no tocar el original,
+// cada \input que resuelva a un archivo se copia al directorio de render
+// con las sustituciones de FONT_SUBS aplicadas y se re-apunta el \input.
+// Solo se toca el archivo si la sustitución cambia algo.
+export function materializeInputs(latex, renderDir) {
+  return latex.replace(/\\input\{([^}]+)\}/g, (m, rel) => {
+    const srcFile = path.resolve(renderDir, rel);
+    if (!fs.existsSync(srcFile) || !fs.statSync(srcFile).isFile()) return m;
+    const original = fs.readFileSync(srcFile, 'utf8');
+    const sub = substituteFonts(original);
+    if (sub === original) return m;
+    const outName = `_sub_${path.basename(rel)}`;
+    fs.writeFileSync(path.join(renderDir, outName), sub);
+    return `\\input{${outName}}`;
+  });
+}
+
 export function buildPreamble(fm, { longPage }) {
   const fontsize = extractScalar(fm.fmLines, 'fontsize') || '12pt';
   const mainfont = extractScalar(fm.fmLines, 'mainfont') || 'Latin Modern Roman';
@@ -275,7 +295,7 @@ export function runXelatex(texFile, cwd) {
 // xelatex -> pdftoppm 120dpi -> recorte y unión de páginas con PIL
 export function renderDocPng(n, latex, renderDir, docsDir) {
   const texFile = `d${n}.tex`;
-  fs.writeFileSync(path.join(renderDir, texFile), latex);
+  fs.writeFileSync(path.join(renderDir, texFile), materializeInputs(latex, renderDir));
   try {
     const err = runXelatex(texFile, renderDir);
     if (err) throw err;
@@ -304,7 +324,7 @@ export function renderDocPng(n, latex, renderDir, docsDir) {
 // PIL; si tiene una, se usa tal cual (el borde lo pone standalone).
 export function renderDocStandalone(n, latex, renderDir, outPng) {
   const texFile = `d${n}.tex`;
-  fs.writeFileSync(path.join(renderDir, texFile), latex);
+  fs.writeFileSync(path.join(renderDir, texFile), materializeInputs(latex, renderDir));
   const err = runXelatex(texFile, renderDir);
   if (err) throw err;
   runRender('pdftoppm', ['-png', '-r', '120', `d${n}.pdf`, `d${n}`], { cwd: renderDir });
