@@ -55,7 +55,7 @@ inventes.
 | `publish` (YYYY-MM-DD) | `2026-12-01` | Humano (puede ser futura: no se publica hasta su fecha) |
 | `summary` (una frase, sin spoilers) | — | Humano |
 | Piezas que revela (`reveals`) | `p-lande-15` | Humano |
-| Lugar de cada doc-box (`place-map`) | `1=deishe,2=taaku` | Humano o `\docmeta` de la fuente |
+| Lugar de cada doc-box (`place-map`) | `1=deishe,2=none` (`none` = sin lugar asociado) | Humano o `\docmeta` de la fuente |
 | Ruta de la fuente | `content/sources/vol12.md` | Humano |
 | PDF ya compilado (opcional) | ruta al PDF del autor | Humano; si existe, pasar `--pdf` |
 
@@ -179,7 +179,7 @@ publicado y su contenido nunca llega a `public/`.
 | build: año fuera de eras | Rango nuevo | Añadir era en `eras.yaml` |
 | check-volume: imagen > 700 KB | Sin optimizar | Paso 3 |
 | check-volume: `{{dN}}` sin entrada | Cuerpo con marcador huérfano | Revisar diff del cuerpo |
-| importer: `falta lugar (--place-map N=...)` | Doc-box sin lugar | `--place-map N=<lugar>` |
+| importer: `falta lugar (--place-map N=...)` | Doc-box sin lugar | `--place-map N=<lugar>`; si el documento no tiene lugar asociado: `--place-map N=none` |
 | importer: render xelatex falla | LaTeX del doc-box | Mirar `renders/*.log`; corregir en la fuente del autor |
 
 ## Cuándo parar y preguntar

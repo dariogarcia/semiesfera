@@ -9694,6 +9694,16 @@
         "x": 1263.1,
         "y": 317.3
       }
+    },
+    {
+      "id": "tadel",
+      "name": "Tadel",
+      "parent": "lande-16",
+      "geometry": {
+        "type": "point",
+        "x": 1032.3,
+        "y": 249.4
+      }
     }
   ]
 }

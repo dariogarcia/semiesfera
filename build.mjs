@@ -125,7 +125,7 @@ for (const id of fs.readdirSync(storiesDir).sort()) {
       if (typeof d[field] !== 'string' || !d[field].trim()) fail(`${where}: falta "${field}"`);
     }
     if (typeof d.image === 'string' && !fs.existsSync(path.join(dir, d.image))) fail(`${where}: no existe la imagen ${d.image}`);
-    if (!Array.isArray(d.places) || !d.places.length) fail(`${where}: "places" debe ser una lista no vacía`);
+    if (!Array.isArray(d.places)) fail(`${where}: "places" debe ser una lista (vacía = sin lugar asociado)`);
     else for (const pid of d.places) if (!placeById.has(pid)) fail(`${where}: lugar desconocido "${pid}"`);
     if (typeof d.year !== 'number' || !Number.isInteger(d.year)) fail(`${where}: "year" debe ser un entero`);
     if (d.yearEnd != null && (typeof d.yearEnd !== 'number' || d.yearEnd < d.year)) fail(`${where}: "yearEnd" debe ser >= year`);
@@ -138,7 +138,7 @@ for (const id of fs.readdirSync(storiesDir).sort()) {
       if (typeof im.alt !== 'string' || !im.alt.trim()) fail(`${where}: falta "alt"`);
       if (im.caption != null && typeof im.caption !== 'string') fail(`${where}: "caption" debe ser texto`);
       if (im.width != null && (typeof im.width !== 'number' || im.width < 1 || im.width > 100)) fail(`${where}: "width" debe ser un porcentaje 1-100`);
-      if (!Array.isArray(im.places) || !im.places.length) fail(`${where}: "places" debe ser una lista no vacía`);
+      if (!Array.isArray(im.places)) fail(`${where}: "places" debe ser una lista (vacía = sin lugar asociado)`);
       else for (const pid of im.places) if (!placeById.has(pid)) fail(`${where}: lugar desconocido "${pid}"`);
       if (typeof im.year !== 'number' || !Number.isInteger(im.year)) fail(`${where}: "year" debe ser un entero`);
       if (im.yearEnd != null && (typeof im.yearEnd !== 'number' || im.yearEnd < im.year)) fail(`${where}: "yearEnd" debe ser >= year`);

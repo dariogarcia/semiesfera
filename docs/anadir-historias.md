@@ -67,7 +67,7 @@ Banderas útiles:
 | ----------------------- | ------------------------------------------------------------ |
 | `--force`               | Regenerar encima de una importación anterior                  |
 | `--label 9=Transcripción`| Corregir el label/auto-alt del documento 9                    |
-| `--place-map 5=kalts-een`| Decidir en qué lugar vive cada documento (n=place-id)          |
+| `--place-map 5=kalts-een`| Decidir en qué lugar vive cada documento (n=place-id; `none` = sin lugar) |
 | `--publish 2026-11-01`  | Fecha de publicación                                          |
 | `--no-render`           | Solo `story.md` + marcadores SVG (rápido, para iterar texto)  |
 | `--pdf mi.pdf`          | Usar un PDF ya compilado en vez de compilar                   |
@@ -235,8 +235,9 @@ un documento** en `story.md`. Los datos salen de tu propio `\docmeta`:
 
 - `label`: corto y **distinto entre los documentos de la misma historia**
   (aparece en el panel de documentos y en la línea de tiempo).
-- `places`: lista de ids de `places.json`, al menos uno. Un documento puede
-  vivir en varios lugares.
+- `places`: lista de ids de `places.json`. Un documento puede vivir en
+  varios lugares; si no está asociado a ningún lugar, lista vacía (`[]`) —
+  no se dibuja en el mapa. En el importer: `--place-map N=none`.
 - `alt`: una frase que describa el documento (accesibilidad).
 
 **Posición en el texto**: cada documento se muestra donde estaba su doc-box

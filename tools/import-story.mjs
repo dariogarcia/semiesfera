@@ -8,7 +8,7 @@
 //   node tools/import-story.mjs <fuente.md> --id <slug> --volume <texto>
 //     [--title "Título"] [--sequence N] [--publish YYYY-MM-DD]
 //     [--summary "..."] [--reveals p1,p2] [--place <id>]
-//     [--place-map 1=deishe,2=taaku,10=etaan+kalts-een]
+//     [--place-map 1=deishe,2=none,10=etaan+kalts-een]   (none = sin lugar asociado)
 //     [--label 9=Transcripción] [--pdf <ruta>] [--no-render] [--force]
 
 import fs from 'node:fs';
@@ -193,8 +193,7 @@ function writeStoryMd(story) {
   const docYaml = story.documents.map((d) => `  - image: docs/${d.image}
     alt: ${yamlScalar(d.alt)}
     label: ${yamlScalar(d.label)}
-    places:
-${d.places.map((p) => `      - ${p}`).join('\n')}
+    places:${d.places.length ? `\n${d.places.map((p) => `      - ${p}`).join('\n')}` : ' []'}
     year: ${d.year}${d.yearEnd != null ? `\n    yearEnd: ${d.yearEnd}` : ''}`);
   const fm = `---
 title: ${yamlScalar(story.title)}
@@ -211,8 +210,7 @@ ${docYaml.join('\n')}
 images:
 ${story.images.map((im) => `  - file: ${im.file}
     alt: ${yamlScalar(im.alt)}${im.caption ? `\n    caption: ${yamlScalar(im.caption)}` : ''}${im.width != null ? `\n    width: ${im.width}` : ''}
-    places:
-${im.places.map((p) => `      - ${p}`).join('\n')}
+    places:${im.places.length ? `\n${im.places.map((p) => `      - ${p}`).join('\n')}` : ' []'}
     year: ${im.year}`).join('\n')}
 ---
 
@@ -283,8 +281,11 @@ function main() {
     const base = (labelMap[n] || (tipo || fuente).split(/\s+/)[0]).replace(/[.:,;]+$/, '');
     seen[base] = (seen[base] || 0) + 1;
     const label = seen[base] > 1 ? `${base} ${roman(seen[base])}` : base;
-    let places_ = placeMap[n] ? placeMap[n].split('+').map((s) => s.trim()) : (args.place ? [args.place] : null);
-    if (!places_) throw new Error(`Documento ${n}: falta lugar (--place-map ${n}=... o --place)`);
+    // lugar del documento: "none" (o "-") = sin lugar asociado (no se dibuja
+    // en el mapa); si falta del todo, error — evita mapeos olvidados
+    const spec = placeMap[n] ?? (args.place || null);
+    let places_ = spec === 'none' || spec === '-' ? [] : spec ? spec.split('+').map((s) => s.trim()) : null;
+    if (!places_) throw new Error(`Documento ${n}: falta lugar (--place-map ${n}=... o ${n}=none, o --place)`);
     for (const pid of places_) if (!placeIds.has(pid)) throw new Error(`Documento ${n}: lugar desconocido "${pid}"`);
     const alt0 = `${fuente.replace(/\.+$/, '')}.${tipo ? ` ${tipo.replace(/\.+$/, '')}.` : ''}`;
     const alt = labelMap[n] && tipo ? alt0.replace(tipo.split(/\s+/)[0], labelMap[n]) : alt0;
@@ -374,7 +375,10 @@ function main() {
     path.resolve(ROOT, args['imgs-dir'] || '../../input/imgs'),
     path.resolve(ROOT, args['maps-dir'] || '../../input/map_files')
   ];
-  const imgPlace = args['img-place'] || (docs[0] && docs[0].places[0]) || null;
+  // lugar por defecto de las imágenes: --img-place (admite "none" = sin
+  // lugar); si no, el del primer documento; si ese tampoco tiene, []
+  const imgPlaceArg = args['img-place'] != null ? args['img-place'] : (docs[0] && docs[0].places[0] != null ? docs[0].places[0] : null);
+  const imgPlace = imgPlaceArg === 'none' || imgPlaceArg === '-' ? [] : imgPlaceArg != null ? [imgPlaceArg] : [];
   const imgYear = args['img-year'] != null ? parseInt(args['img-year'], 10) : (docs[0] ? docs[0].year : null);
   const images = storyImages.map((im) => {
     const rel = im.src.replace(/^(\.\.\/)+_Sources\//, '');
@@ -395,7 +399,7 @@ function main() {
       alt: im.caption || `Imagen ${im.n} de la historia`,
       caption: im.caption || '',
       width: im.width,
-      places: [imgPlace],
+      places: imgPlace,
       year: imgYear
     };
   });
