@@ -59,7 +59,8 @@ Qué hace solo:
 - Extrae frontmatter (título, volumen, `header-includes`), doc-boxes y
   `\docmeta` de cada uno (Tipo → `label`, Año → `year`/`yearEnd`, Fuente → `alt`).
 - Convierte la narrativa a Markdown reducido: `\dline{>}{…}` (y
-  `\dline{Nombre}{…}`) → cita de diálogo (`> …`, una línea por réplica);
+  `\dline{Nombre}{…}`) → cita de diálogo (`> — …`, una línea por réplica;
+  la raya marca cada hablante, como el `>:` en negrita del PDF);
   el bloque final `{\centering \textbf{FIN}}` y su pie de copyright →
   `**FIN**` (la web pinta el © en su propio pie de página, así que el
   bloque de cierre de la fuente nunca llega al cuerpo).

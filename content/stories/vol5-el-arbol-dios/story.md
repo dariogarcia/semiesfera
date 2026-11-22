@@ -148,10 +148,10 @@ La dosis diaria recomendada subió y subió, a la vez consecuencia y causa de la
 
 Para cuando la medicina descubrió cómo la resistencia bacteriana explicaba estas gráficas, el Aman que había permitido la supervivencia de los amanitas durante siglos ya no existía. Donde pisa la civilización, no vuelve a crecer la magia. Esta solo nace en el individuo.
 
-> Abuela, ¿por qué sigues haciendo este pastel, si sabe horrible?
-> Por la misma razón por la que tú te los sigues comiendo, tontito.
-> ¿Y lo de rezar de espaldas a un pastel?
-> Amor a tu gente o amor a un árbol. Todo es lo mismo, tontito.
+> — Abuela, ¿por qué sigues haciendo este pastel, si sabe horrible?
+> — Por la misma razón por la que tú te los sigues comiendo, tontito.
+> — ¿Y lo de rezar de espaldas a un pastel?
+> — Amor a tu gente o amor a un árbol. Todo es lo mismo, tontito.
 
 Esa es mi abuela. Y esta es la historia de la historia del Aman. Árbol sagrado, herramienta militar, objeto de fobia, espécimen de estudio, y finalmente, reliquia culinaria estéril. Todo un viaje, con la humanidad al volante. Como esto ya estaría, yo voy a seguir a lo mío. Porque no vamos a dejar un solitario trozo de pastel, ¿verdad?
 

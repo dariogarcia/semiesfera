@@ -127,7 +127,8 @@ export function cleanNarrative(text) {
     const reply = braceContent(t, speaker.end + 1);
     if (!reply) break;
     const who = plainText(speaker.content).trim();
-    const tag = who === '>' ? '' : `**${who}:** `;
+    // anónima (>): raya de diálogo por réplica, como la imprime el PDF
+    const tag = who === '>' ? '— ' : `**${who}:** `;
     t = t.slice(0, m.index) + `> ${tag}${reply.content.trim()}` + t.slice(reply.end + 1);
   }
   t = t.replace(/\\(?:clearpage|newpage|par|noindent)\b/g, '');
