@@ -5,6 +5,8 @@ publish: 2026-11-20
 cover: cover.svg
 pdf: story.pdf
 summary: "Mil años de la vida de un árbol: El Aman, hoy famoso por la fruta más pastosa e insípida de la semiesfera, fue dios en la selva de Amanar. Su historia, contada por viajeros, hospitales de campaña, circulares militares y catálogos de museo."
+hook: "Naturaleza, credo e industria: mil años de la vida de un árbol."
+place: lande-16
 sequence: 2
 reveals:
   - p-lande-16

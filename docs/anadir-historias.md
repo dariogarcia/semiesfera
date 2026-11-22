@@ -45,7 +45,9 @@ node tools/import-story.mjs content/sources/mi-historia.md \
   --publish 2026-11-01 \
   --reveals p-taaku \
   --place-map 1=deishe,2=taaku,3=taaku \
-  --summary "Una frase de gancho, sin spoilers."
+  --summary "Una o dos frases de resumen, sin spoilers." \
+  --hook "El gancho de una línea para la tarjeta de la portada." \
+  --story-place taaku
 
 # 3. Revisa el resultado y ajusta a mano lo que quieras:
 git diff content/stories/mi-historia/story.md
@@ -69,6 +71,8 @@ Banderas útiles:
 | `--label 9=Transcripción`| Corregir el label/auto-alt del documento 9                    |
 | `--place-map 5=kalts-een`| Decidir en qué lugar vive cada documento (n=place-id; `none` = sin lugar) |
 | `--publish 2026-11-01`  | Fecha de publicación                                          |
+| `--hook "…"`            | Gancho de una línea para la tarjeta de la portada             |
+| `--story-place taaku`   | Lugar donde sucede la historia (tarjeta de la portada)        |
 | `--no-render`           | Solo `story.md` + marcadores SVG (rápido, para iterar texto)  |
 | `--pdf mi.pdf`          | Usar un PDF ya compilado en vez de compilar                   |
 | `--img-place lande-14`  | Lugar provisional de las imágenes de la narrativa             |
@@ -92,7 +96,8 @@ node tools/import-story.mjs content/sources/mi-historia.md \
   --publish 2026-11-01 --reveals p-ejemplo \
   --place-map 1=deishe,2=taaku,3=taaku \
   --img-place taaku --img-year 480 \
-  --summary "Una frase de gancho, sin spoilers."
+  --summary "Una o dos frases de resumen, sin spoilers." \
+  --hook "El gancho de una línea de la tarjeta." --story-place taaku
 # revisa y ajusta metadatos: labels, alt, places/año de las imágenes
 git diff content/stories/mi-historia/story.md
 npm test
@@ -343,6 +348,8 @@ publish: 2026-11-01
 cover: cover.svg
 pdf: story.pdf
 summary: "La historia más famosa de la semiesfera: Xunei Thun, el primer interlande, desde el museo que lo convirtió en mito."
+hook: "Poder, riquezas, minas y aventuras: la historia más famosa de la semiesfera."
+place: taaku
 sequence: 7   # el siguiente entero libre: único y sin huecos entre TODAS las historias
 reveals:
   - p-taaku
@@ -419,13 +426,18 @@ Referencia completa de campos:
 | ------------ | ----------- | -------------------------------------------------------------- |
 | `title`      | sí          |                                                                |
 | `volume`     | sí          | Ej. «Volumen VI» o «Historias con historia — Volumen 11»       |
-| `summary`    | sí          | Una o dos frases; va a la landing, al panel y al RSS           |
+| `summary`    | sí          | Una o dos frases; va al panel de historias y al RSS            |
+| `hook`       | sí          | Gancho de una línea, sin spoilers; tarjeta de la portada       |
+| `place`      | sí          | Id de `places.json`: lugar donde sucede la historia (tarjeta)  |
 | `publish`    | sí          | `YYYY-MM-DD`. La historia no aparece hasta ese día             |
 | `sequence`   | sí          | Entero, **único y consecutivo desde 1 entre TODAS las historias** (incluidas las no publicadas) |
 | `cover`      | sí          | Archivo existente en la carpeta                                |
 | `pdf`        | sí          | Archivo existente en la carpeta                                |
 | `reveals`    | sí          | Lista de ids de pieza que se revelan al marcarla leída         |
 | `documents`  | sí          | Lista no vacía; campos por documento en 2.4                    |
+
+El tiempo de lectura de la tarjeta («N min») no es un campo: lo calcula el
+build contando las palabras del cuerpo (200 por minuto, mínimo 1).
 
 ### 3.7 El cuerpo: Markdown sencillo
 
@@ -552,7 +564,7 @@ documentos.
 | `places.json`: ids únicos, geometría `point`/`circle` válida, `parent` existente          |
 | `map-pieces.json`: ids únicos, archivos existentes, x/y/width/height numéricos            |
 | `eras.yaml`: `name`, `from < to` numéricos                                                |
-| Historias: id slug, `title`/`volume`/`summary`, `publish` YYYY-MM-DD, `sequence` entero   |
+| Historias: id slug, `title`/`volume`/`summary`/`hook`, `place` conocido, `publish` YYYY-MM-DD, `sequence` entero |
 | `cover` y `pdf` existen en la carpeta                                                     |
 | `reveals` solo con piezas conocidas; `documents` no vacío                                 |
 | Por documento: `image` existe, `alt` y `label` no vacíos, `places` conocidos, `year` entero, `yearEnd >= year` |

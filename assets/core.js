@@ -202,28 +202,22 @@
       var svg = holder.querySelector('svg');
       if (!svg) return;
       var html = '';
-      var pieces = [];
       var seen = {};
       files.forEach(function (f) {
         (f.pieces || []).forEach(function (p) {
           if (seen[p.id]) return;
           seen[p.id] = 1;
-          pieces.push(p);
           html += '<image href="' + u(p.file) + '" x="' + p.x + '" y="' + p.y + '" width="' + p.width + '" height="' + p.height + '"/>';
         });
       });
       svg.innerHTML = html;
-      // montañas: el mismo halo difuminado que el explorador, debajo de
-      // las piezas (sin él, entre dos piezas queda una franja negra)
-      montanasLayer(pieces, rec).then(function (layer) {
-        if (!layer) return;
-        svg.insertAdjacentHTML('afterbegin',
-          '<image href="' + layer.src + '" x="0" y="0" width="' + layer.width + '" height="' + layer.height + '"/>');
-      });
+      // sin la capa de montañas del explorador: en la portada se muestra
+      // exactamente el mapa revelado por el lector, nada más
     }).catch(function () { /* sin datos: sin mapa */ });
   }
 
   initLandingProgress();
+  initLandingCards();
   initLandingBackdrop();
 
   // -- piezas vistas (para el fundido de revelado) ------------------------------------
@@ -343,6 +337,20 @@
           : 'Has leído el ' + pct + '% de lo publicado — ' + n + ' de ' + total + ' historias') + '</span>';
       el.hidden = false;
     }).catch(function () { /* sin datos, sin línea */ });
+  }
+
+  // tarjetas de la portada: las historias ya leías lo susurran (verde tenue
+  // y "· leída" junto al volumen; el resto del estado vive en el progreso)
+  function initLandingCards() {
+    var cards = document.querySelectorAll('[data-story-card]');
+    var read = getRead();
+    for (var i = 0; i < cards.length; i++) {
+      var a = cards[i];
+      if (!read[a.getAttribute('data-story-card')]) continue;
+      a.classList.add('is-read');
+      var vol = a.querySelector('.story-card-vol');
+      if (vol) vol.textContent += ' · leída';
+    }
   }
 
   // -- barra de progreso de lectura -----------------------------------------------

@@ -58,6 +58,8 @@ inventes.
 | `sequence` | `2` | **Calculado**: máximo existente + 1 (verifica en `content/stories/*/story.md`) |
 | `publish` (YYYY-MM-DD) | `2026-12-01` | Humano (puede ser futura: no se publica hasta su fecha) |
 | `summary` (una frase, sin spoilers) | — | Humano |
+| `hook` (gancho de una línea, tarjeta de la portada) | — | Humano |
+| Lugar donde sucede (`place`) | `taaku` | Humano (id de `places.json`) |
 | Piezas que revela (`reveals`) | `p-lande-15` | Humano |
 | Lugar de cada doc-box (`place-map`) | `1=deishe,2=none` (`none` = sin lugar asociado) | Humano o `\docmeta` de la fuente |
 | Ruta de la fuente | `content/sources/vol12.md` | Humano |
@@ -85,7 +87,9 @@ node tools/import-story.mjs content/sources/<id>.md \
   --volume "<título del volumen>" \
   --sequence <N> \
   --publish <YYYY-MM-DD> \
-  --summary "<frase de gancho>" \
+  --summary "<frase de resumen>" \
+  --hook "<gancho de una línea>" \
+  --story-place <lugar-de-la-historia> \
   --reveals <pieza> \
   --place-map 1=<lugar>,2=<lugar>,... \
   --img-place <lugar-por-defecto-de-imagenes> \
@@ -127,6 +131,8 @@ Comprobrar en el diff, sin cambiar contenido creativo:
 - `alt` descriptivo en todos los documentos e imágenes;
 - `year`/`yearEnd` coherentes con los `\docmeta` de la fuente;
 - `summary` sin spoilers;
+- `hook` de una línea, sin spoilers (tarjeta de la portada);
+- `place` (lugar de la historia) dentro de `places.json`;
 - `places` de cada documento dentro de las piezas reveladas.
 
 Si algo de fondo está mal (texto, lugar, año), corregir **en la fuente del
@@ -160,7 +166,7 @@ publicado y su contenido nunca llega a `public/`.
 
 1. `git status` limpio (sin cambios a medias) — el diff es tu herramienta.
 2. Leer los metadatos actuales de `content/stories/<id>/story.md`
-   (`sequence`, `publish`, `reveals`, `summary`, …): se conservan.
+   (`sequence`, `publish`, `reveals`, `summary`, `hook`, `place`, …): se conservan.
 3. Copiar la fuente actualizada a `content/sources/<id>.md` (verbatim).
 4. Re-importar con **los mismos valores** de `sequence` y `publish` (paso 2
    de la tarea A). El importer regenera `story.md`, `docs/*.png` e imágenes.

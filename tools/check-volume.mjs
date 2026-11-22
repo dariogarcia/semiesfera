@@ -30,7 +30,7 @@ const mdPath = path.join(dir, 'story.md');
 if (!fs.existsSync(mdPath)) { fail(`no existe content/stories/${id}/story.md`); process.exit(1); }
 const { data: meta, body } = splitFrontmatter(fs.readFileSync(mdPath, 'utf8'));
 
-for (const field of ['title', 'volume', 'publish', 'summary', 'sequence', 'cover', 'pdf']) {
+for (const field of ['title', 'volume', 'publish', 'summary', 'hook', 'place', 'sequence', 'cover', 'pdf']) {
   if (!meta[field]) fail(`falta el campo obligatorio "${field}"`);
 }
 if (meta.publish && !/^\d{4}-\d{2}-\d{2}$/.test(meta.publish)) fail(`publish "${meta.publish}" no es una fecha YYYY-MM-DD`);
@@ -94,6 +94,7 @@ const pieceIds = new Set(pieces.map((p) => p.id));
 for (const r of meta.reveals || []) {
   if (!pieceIds.has(r)) fail(`reveals: la pieza "${r}" no existe en map-pieces.json`);
 }
+if (meta.place && !placeIds.has(meta.place)) fail(`place: el lugar "${meta.place}" no existe en places.json`);
 for (const d of [...documents, ...images]) {
   for (const p of d.places || []) {
     if (!placeIds.has(p)) fail(`"${d.label || d.image}": el lugar "${p}" no existe en places.json`);

@@ -5,6 +5,8 @@ publish: 2026-10-07
 cover: cover.svg
 pdf: story.pdf
 summary: "La leyenda de Xunei Thun, el primer interlande, contada por los papeles que sobrevivieron: audioguías de museo, edictos reales, cartas desde la mina-celda y un diario descubierto siglos después."
+hook: "Poder, riquezas, minas y aventuras: la historia más famosa de la semiesfera."
+place: taaku
 sequence: 1
 reveals:
   - p-lande-14

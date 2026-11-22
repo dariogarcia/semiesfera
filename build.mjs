@@ -108,9 +108,10 @@ for (const id of fs.readdirSync(storiesDir).sort()) {
   }
   const s = { id, ...parsed.data, body: parsed.body };
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) fail(`stories/${id}: el id debe ser un slug (minúsculas, números y guiones)`);
-  for (const field of ['title', 'volume', 'summary']) {
+  for (const field of ['title', 'volume', 'summary', 'hook']) {
     if (typeof s[field] !== 'string' || !s[field].trim()) fail(`stories/${id}: falta el campo "${field}"`);
   }
+  if (typeof s.place !== 'string' || !placeById.has(s.place)) fail(`stories/${id}: "place" debe ser un lugar de places.json`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s.publish))) fail(`stories/${id}: "publish" debe ser una fecha YYYY-MM-DD`);
   if (!Number.isInteger(s.sequence)) fail(`stories/${id}: "sequence" debe ser un entero`);
   for (const field of ['cover', 'pdf']) {
@@ -308,6 +309,17 @@ function storyRecord(s) {
   };
 }
 
+// tiempo de lectura estimado: palabras de la narrativa (documentos e
+// imágenes aparte) a 200 por minuto, mínimo 1
+function readMinutes(s) {
+  const words = s.body
+    .replace(/\{\{[di]\d+\}\}/g, ' ')
+    .replace(/[#>*_`|]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
 const records = new Map(published.map((s) => [s.id, storyRecord(s)]));
 const indexData = {
   mapSize: mapData.size,
@@ -318,7 +330,8 @@ const indexData = {
   ...(mapData.montanas ? { montanas: mapData.montanas } : {}),
   stories: published.map((s) => ({
     id: s.id, title: s.title, volume: s.volume, sequence: s.sequence,
-    summary: s.summary, cover: `stories/${s.id}/${s.cover}`,
+    summary: s.summary, hook: s.hook, place: s.place, minutes: readMinutes(s),
+    cover: `stories/${s.id}/${s.cover}`,
     // lo mínimo de cada documento para validar y abrir enlaces ?doc=
     // de historias abiertas sin cargar antes sus datos
     documents: records.get(s.id).documents.map((d) => ({ id: d.id, story: d.story }))
@@ -375,33 +388,50 @@ function landingMain() {
   // ha marcado como leídas (se rellena en core.js) — nunca se adelanta
   // territorio: un lector sin progreso no ve mapa
   const size = mapData.size;
+  // tarjetas laterales: gancho de una línea, lugar y tiempo de lectura.
+  // Informativas, sin enlace: el único camino es el botón central
+  const card = (s) => {
+    const vol = (s.volume.match(/Volumen\s+\d+/) || [s.volume])[0];
+    const num = (s.volume.match(/(\d+)\s*$/) || [])[1] || '';
+    const place = placeById.get(s.place);
+    return `        <li>
+          <div class="story-card" data-story-card="${s.id}" data-vol="${num}">
+            <span class="story-card-vol">${escapeHtml(vol)}</span>
+            <h2 class="story-card-title">${escapeHtml(s.title)}</h2>
+            <p class="story-card-hook">${escapeHtml(s.hook)}</p>
+            <p class="story-card-meta"><span>${escapeHtml(place.name)}</span><span>${readMinutes(s)} min</span></p>
+          </div>
+        </li>`;
+  };
+  // reparto lateral: primera mitad a la izquierda, segunda a la derecha
+  // (en móvil caen debajo del centro, en orden de secuencia)
+  const all = published.map(card);
+  const half = Math.ceil(all.length / 2);
+  const left = all.slice(0, half).join('\n');
+  const right = all.slice(half).join('\n');
   return `<main class="landing">
   <div class="landing-map" data-landing-map aria-hidden="true"><svg viewBox="0 0 ${size.width} ${size.height}" preserveAspectRatio="xMidYMid slice"></svg></div>
   <div class="landing-inner">
-    <p class="landing-welcome">Bienvenido a</p>
-    <h1>la Semiesfera</h1>
-    <p class="landing-kicker">Un mundo de historias por revelar</p>
-    <p class="landing-lead">La Semiesfera es un ciclo de historias sobre un mundo nuevo. Cada relato añade una pieza del espacio y del tiempo, abriéndose ante el lector de manera interactiva.</p>
-    <ol class="landing-steps">
-      <li>
-        <h2>Lee</h2>
-        <p>Avanza a tu ritmo y siguiendo tus intereses.*</p>
-        <p class="landing-note">*en función de disponibilidad</p>
-      </li>
-      <li>
-        <h2>Marca lo leído</h2>
-        <p>Cuando terminas una historia la marcas como leída, y el mapa y la línea de tiempo crecen con lo que esa historia revela.</p>
-      </li>
-      <li>
-        <h2>Explora</h2>
-        <p>Navega el mapa y el tiempo a tu aire. Cada documento enlaza su lugar y su fecha, y cada lugar recuerda sus documentos.</p>
-      </li>
-    </ol>
-    <p class="landing-cta"><a class="landing-enter" href="explorar/">Entrar</a></p>
-    <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
-    <p class="landing-progress" data-landing-progress hidden></p>
-    <p class="landing-legal">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</p>
+    <aside class="landing-side landing-side-left">
+      <ul class="story-cards">
+${left}
+      </ul>
+    </aside>
+    <div class="landing-center">
+      <p class="landing-welcome">la Semiesfera</p>
+      <h1><em>historias</em> con historias</h1>
+      <p class="landing-lead">Lee las historias, revela el mapa y el tiempo de la semiesfera.</p>
+      <p class="landing-cta"><a class="landing-enter" href="explorar/">entra en la semiesfera</a></p>
+      <p class="landing-foot">Tu progreso se guarda en este navegador, sin cuentas ni servidores. <button type="button" class="btn ghost" data-reset-progress>Reiniciar mi progreso</button></p>
+      <p class="landing-progress" data-landing-progress hidden></p>
+    </div>
+    <aside class="landing-side landing-side-right">
+      <ul class="story-cards">
+${right}
+      </ul>
+    </aside>
   </div>
+  <details class="landing-legal"><summary>acerca de</summary><p>© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</p></details>
 </main>`;
 }
 
@@ -565,8 +595,8 @@ const DATA_V = hashOf(JSON.stringify([indexData, ...[...records.values()]]));
 writeOut('index.html', layout({
   prefix: '',
   url: '',
-  title: 'Semiesfera — un mundo que se revela al leer',
-  desc: 'Un ciclo de historias sobre un mundo que empieza sin mapa y se dibuja al leer. Historias, mapa y línea de tiempo.',
+  title: 'la Semiesfera — historias con historias',
+  desc: 'Lee las historias, revela el mapa y el tiempo de la semiesfera: un mundo que se dibuja historia a historia.',
   main: landingMain(),
   script: null,
   inlineIndex: false,

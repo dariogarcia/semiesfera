@@ -31,7 +31,7 @@ const PALETTE = ['#e2946b', '#79b6a9', '#dfc17e', '#a48ec9', '#7fa6c9', '#c9836f
 // Argumentos
 // ---------------------------------------------------------------------------
 
-const VALUE_FLAGS = ['id', 'volume', 'title', 'sequence', 'publish', 'summary', 'reveals', 'place', 'place-map', 'label', 'pdf', 'imgs-dir', 'maps-dir', 'img-place', 'img-year'];
+const VALUE_FLAGS = ['id', 'volume', 'title', 'sequence', 'publish', 'summary', 'hook', 'story-place', 'reveals', 'place', 'place-map', 'label', 'pdf', 'imgs-dir', 'maps-dir', 'img-place', 'img-year'];
 const BOOL_FLAGS = ['no-render', 'force'];
 
 function parseArgs(argv) {
@@ -202,6 +202,8 @@ publish: ${story.publish}
 cover: cover.svg
 pdf: story.pdf
 summary: ${yamlScalar(story.summary)}
+hook: ${yamlScalar(story.hook)}
+place: ${story.place}
 sequence: ${story.sequence}
 reveals:
 ${story.reveals.map((p) => `  - ${p}`).join('\n')}
@@ -320,6 +322,13 @@ function main() {
   const publish = args.publish || new Date().toISOString().slice(0, 10);
   if (!args.summary) throw new Error('Falta --summary (se usa en la portada y el RSS)');
   const summary = args.summary;
+  if (!args.hook) throw new Error('Falta --hook (gancho de una línea para la tarjeta de la portada)');
+  const hook = args.hook;
+  // lugar donde sucede la historia (tarjeta de la portada); no confundir
+  // con --place, que es el lugar por defecto de los documentos
+  const storyPlace = args['story-place'];
+  if (!storyPlace) throw new Error('Falta --story-place <id de places.json> (lugar donde sucede la historia)');
+  if (!placeIds.has(storyPlace)) throw new Error(`--story-place: lugar desconocido "${storyPlace}"`);
 
   // documentos
   const preamble = buildPreamble(src, { longPage: true });
@@ -404,7 +413,7 @@ function main() {
     };
   });
 
-  writeStoryMd({ dir: storyDir, title, volume, publish, summary, sequence, reveals, documents: docs.map((d) => ({ ...d, image: fs.existsSync(path.join(docsDir, `d${d.n}.png`)) ? `d${d.n}.png` : `d${d.n}.svg` })), images, body: narrative });
+  writeStoryMd({ dir: storyDir, title, volume, publish, summary, hook, place: storyPlace, sequence, reveals, documents: docs.map((d) => ({ ...d, image: fs.existsSync(path.join(docsDir, `d${d.n}.png`)) ? `d${d.n}.png` : `d${d.n}.svg` })), images, body: narrative });
 
   console.log(`Importada ${id} (${docs.length} documentos, ${images.length} imágenes, sequence ${sequence}, publish ${publish})`);
   console.log(`  pdf: ${pdfStatus}`);

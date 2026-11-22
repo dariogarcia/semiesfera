@@ -26,7 +26,13 @@ ok(exists('explorar/index.html'), 'existe explorar/index.html');
 ok(exists('rss.xml'), 'existe rss.xml');
 const indexHtml = read('index.html');
 ok(indexHtml.includes('explorar/'), 'la portada enlaza a explorar/');
-ok(indexHtml.includes('Entrar'), 'la portada tiene el botón de entrada');
+ok(indexHtml.includes('entra en la semiesfera'), 'la portada tiene el botón de entrada');
+ok(indexHtml.includes('historias con historias'), 'la portada tiene el título "historias con historias"');
+// sin contar el feed RSS del <noscript>: con JS activo no existe en el DOM
+const linksHtml = indexHtml.replace(/<noscript>[\s\S]*?<\/noscript>/g, '');
+ok((linksHtml.match(/<a\s/g) || []).length === 1, 'el botón central es el único enlace de la portada');
+ok(!indexHtml.includes('<a class="story-card"'), 'las tarjetas son informativas, sin enlace');
+ok(indexHtml.includes('<details class="landing-legal"><summary>acerca de</summary>'), 'la portada esconde los créditos tras «acerca de»');
 ok(!indexHtml.includes('site-header'), 'la portada no tiene barra superior');
 
 // datos
@@ -42,6 +48,10 @@ ok(exploreHtml.includes('data-tl-svg'), 'explorar tiene la línea de tiempo');
 for (const s of index.stories) {
   ok(exists(`historias/${s.id}/index.html`), `página de ${s.id}`);
   ok(exists(`data/${s.id}.json`), `datos de ${s.id}`);
+  ok(typeof s.hook === 'string' && s.hook.trim().length > 0, `${s.id} tiene gancho para la tarjeta`);
+  ok(typeof s.place === 'string' && s.place.trim().length > 0, `${s.id} tiene lugar para la tarjeta`);
+  ok(Number.isInteger(s.minutes) && s.minutes >= 1, `${s.id} tiene tiempo de lectura`);
+  ok(indexHtml.includes(`data-story-card="${s.id}"`), `tarjeta de ${s.id} en la portada`);
   const data = JSON.parse(read(`data/${s.id}.json`));
   ok(data.documents.length > 0, `${s.id} tiene documentos`);
   ok(typeof data.bodyHtml === 'string' && data.bodyHtml.length > 0, `${s.id} tiene el cuerpo en HTML`);
