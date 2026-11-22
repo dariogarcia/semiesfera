@@ -186,8 +186,9 @@
     }
   });
 
-  // telón de fondo de la portada: solo las piezas reveladas por las historias
-  // que el lector ha marcado como leídas (sin progreso, sin mapa)
+  // telón de fondo de la portada: las piezas reveladas por las historias
+  // que el lector ha marcado como leídas, con el mismo halo de montañas
+  // que el explorador (sin progreso, sin mapa)
   function initLandingBackdrop() {
     var holder = document.querySelector('[data-landing-map]');
     if (!holder) return;
@@ -202,17 +203,24 @@
       var svg = holder.querySelector('svg');
       if (!svg) return;
       var html = '';
+      var pieces = [];
       var seen = {};
       files.forEach(function (f) {
         (f.pieces || []).forEach(function (p) {
           if (seen[p.id]) return;
           seen[p.id] = 1;
+          pieces.push(p);
           html += '<image href="' + u(p.file) + '" x="' + p.x + '" y="' + p.y + '" width="' + p.width + '" height="' + p.height + '"/>';
         });
       });
       svg.innerHTML = html;
-      // sin la capa de montañas del explorador: en la portada se muestra
-      // exactamente el mapa revelado por el lector, nada más
+      // montañas: el mismo halo difuminado que el explorador, debajo de
+      // las piezas (sin él, entre dos piezas queda una franja negra)
+      montanasLayer(pieces, rec).then(function (layer) {
+        if (!layer) return;
+        svg.insertAdjacentHTML('afterbegin',
+          '<image href="' + layer.src + '" x="0" y="0" width="' + layer.width + '" height="' + layer.height + '"/>');
+      });
     }).catch(function () { /* sin datos: sin mapa */ });
   }
 
