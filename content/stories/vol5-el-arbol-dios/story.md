@@ -61,8 +61,7 @@ documents:
   - image: docs/d9.png
     alt: Casa de la Verdad Botánica. Informe científico.
     label: Informe
-    places:
-      - lande-16
+    places: []
     year: 361
   - image: docs/d10.png
     alt: Casa de la Verdad Médica. Registro de solicitudes.
@@ -72,8 +71,7 @@ documents:
   - image: docs/d11.png
     alt: Estudios hospitalarios, volumen 2. Estudio epidemiológico retrospectivo.
     label: Estudio
-    places:
-      - tadel
+    places: []
     year: 905
 images:
   - file: imgs/arbolDios/cart/cart2.webp
@@ -82,6 +80,7 @@ images:
     width: 70
     places:
       - taaku
+      - lande-16
     year: 62
   - file: imgs/arbolDios/aman/aman3.webp
     alt: Cultivos del Aman.
