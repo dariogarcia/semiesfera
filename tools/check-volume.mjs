@@ -63,6 +63,18 @@ documents.forEach((d, i) => {
   if (d.year === undefined) fail(`documento ${i + 1} (${d.label}): falta year`);
   if (d.yearEnd !== undefined && d.yearEnd !== null && d.yearEnd < d.year) fail(`documento ${i + 1} (${d.label}): yearEnd < year`);
   if (!d.alt) fail(`documento ${i + 1} (${d.label}): falta alt`);
+  // bigrama repetido = señal del viejo bug del generador de alts
+  const aw = String(d.alt).toLowerCase().replace(/[.,;]/g, '').split(/\s+/).filter(Boolean);
+  if (aw.length >= 6) {
+    const bigrams = new Set();
+    let dup = false;
+    for (let k = 0; k + 1 < aw.length && !dup; k++) {
+      const bg = `${aw[k]} ${aw[k + 1]}`;
+      if (bigrams.has(bg)) dup = true;
+      else bigrams.add(bg);
+    }
+    if (dup) warn(`documento ${i + 1} (${d.label}): posible texto repetido en el alt`);
+  }
   const dims = checkImage(d.image, `documento ${i + 1} (${d.label})`);
   if (dims) docDims.set(`d${i + 1}`, dims);
 });

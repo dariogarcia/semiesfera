@@ -306,11 +306,15 @@ function main() {
     // lugar del documento: "none" (o "-") = sin lugar asociado (no se dibuja
     // en el mapa); si falta del todo, error — evita mapeos olvidados
     const spec = placeMap[n] ?? (args.place || null);
-    let places_ = spec === 'none' || spec === '-' ? [] : spec ? spec.split('+').map((s) => s.trim()) : null;
+    let places_ = spec === 'none' || spec === '-' ? [] : spec ? [...new Set(spec.split('+').map((s) => s.trim()))] : null;
     if (!places_) throw new Error(`Documento ${n}: falta lugar (--place-map ${n}=... o ${n}=none, o --place)`);
     for (const pid of places_) if (!placeIds.has(pid)) throw new Error(`Documento ${n}: lugar desconocido "${pid}"`);
-    const alt0 = `${fuente.replace(/\.+$/, '')}.${tipo ? ` ${tipo.replace(/\.+$/, '')}.` : ''}`;
-    const alt = labelMap[n] && tipo ? alt0.replace(tipo.split(/\s+/)[0], labelMap[n]) : alt0;
+    // alt = fuente + descriptor: el --label si se dio (texto elegido por el
+    // autor), si no el Tipo del \docmeta. El replace antiguo sustituía la
+    // primera palabra del tipo por el label entero dentro de «fuente + tipo»
+    // y duplicaba texto («Manifiesto Noviembre Rosa Noviembre Rosa»).
+    const descriptor = labelMap[n] || tipo;
+    const alt = `${fuente.replace(/\.+$/, '')}.${descriptor ? ` ${String(descriptor).replace(/\.+$/, '')}.` : ''}`;
     return {
       n, label, fuente, tipo, alt, places: places_, ...years,
       yearLabel: fields.ano || fields.año,
