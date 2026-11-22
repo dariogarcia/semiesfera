@@ -58,7 +58,7 @@ De pequeño me solía preguntar ¿Qué hay que hacer para que te recuerden como 
 ::: {.doc-box}
 \begin{tcolorbox}[examenbox, unbreakable, title={}]
 \docmeta{
-\textbf{Fuente:} Cuerpo de Ciudadania, Gobierno de Taaku\\
+\textbf{Fuente:} Cuerpo de Ciudadanía, Gobierno de Taaku\\
 \textbf{Tipo:} Examen de Ciudadanía - Rúbrica de evaluación\\
 \textbf{Año: }460 GC\\
 \textbf{Contexto:} A mediados del Siglo 5, el auge del landismo en Taaku impulsó exámenes de acceso a la ciudadanía, necesario para obtener algunos derechos fundamentales.}
