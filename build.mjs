@@ -561,6 +561,18 @@ const exploreMain = `<main class="explore" data-explore>
           <input type="number" inputmode="numeric" data-year-to placeholder="hasta" aria-label="Filtrar hasta un año">
         </div>
       </div>
+      <div class="dp-control">
+        <span class="dp-control-label">Tipo</span>
+        <select data-type-select aria-label="Filtrar documentos por tipo">
+          <option value="">Texto e imágenes</option>
+          <option value="text">Solo texto</option>
+          <option value="image">Solo imágenes</option>
+        </select>
+      </div>
+      <div class="dp-control">
+        <span class="dp-control-label">Historia</span>
+        <select data-story-select aria-label="Filtrar documentos por historia"><option value="">Todas las historias</option></select>
+      </div>
     </div>
     <div class="dp-filters" data-dp-filters hidden></div>
     <div class="dp-body" data-dp-body>

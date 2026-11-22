@@ -610,7 +610,7 @@ figure.doc { margin: 0; }
 .dp-controls[hidden] { display: none; }
 .dp-controls .dp-control { display: flex; align-items: center; gap: 8px; }
 .dp-controls .dp-control-label {
-  flex: none; width: 44px; font-size: 11px; letter-spacing: 0.06em;
+  flex: none; width: 64px; font-size: 11px; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-dim);
 }
 .dp-controls select {

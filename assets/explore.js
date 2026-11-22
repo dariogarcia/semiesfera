@@ -18,7 +18,7 @@
     allDocs: [],
     eras: [],
     complete: false,
-    sel: { place: null, doc: null },
+    sel: { place: null, doc: null, type: null, story: null },
     range: null,
     preview: null,
     readerDoc: null,
@@ -91,11 +91,13 @@
       list = list.filter(function (d) { return ids.has(d.id); });
     }
     if (state.range) list = list.filter(function (d) { return inRange(d, state.range); });
+    if (state.sel.type) list = list.filter(function (d) { return state.sel.type === 'image' ? d.kind === 'image' : d.kind !== 'image'; });
+    if (state.sel.story) list = list.filter(function (d) { return d.story === state.sel.story; });
     return list;
   }
 
   function filterActive() {
-    return !!(state.sel.place || state.range);
+    return !!(state.sel.place || state.range || state.sel.type || state.sel.story);
   }
 
   // tras cualquier cambio de filtro (lugar o periodo): URL, línea de tiempo,
@@ -1066,6 +1068,8 @@
   function clearSelection() {
     state.sel.place = null;
     state.sel.doc = null;
+    state.sel.type = null;
+    state.sel.story = null;
     state.range = null;
     closeReader();
     applyFilterChange({ chip: true });
@@ -1076,6 +1080,8 @@
   function syncUrl() {
     var params = new URLSearchParams();
     if (state.sel.place) params.set('place', state.sel.place);
+    if (state.sel.type) params.set('type', state.sel.type);
+    if (state.sel.story) params.set('story', state.sel.story);
     if (state.range) { params.set('from', state.range.from); params.set('to', state.range.to); }
     if (state.sel.doc) params.set('doc', state.sel.doc);
     var q = params.toString();
@@ -1086,10 +1092,17 @@
     var params = new URLSearchParams(location.search);
     var docId = params.get('doc');
     var placeId = params.get('place');
+    var typeId = params.get('type');
+    var storyId = params.get('story');
     var from = parseInt(params.get('from'), 10);
     var to = parseInt(params.get('to'), 10);
     if (Number.isFinite(from) && Number.isFinite(to)) {
       state.range = { from: Math.min(from, to), to: Math.max(from, to) };
+    }
+    if (typeId === 'text' || typeId === 'image') state.sel.type = typeId;
+    if (storyId != null) {
+      if (state.docs.some(function (d) { return d.story === storyId; })) state.sel.story = storyId;
+      else S.toast('Esa historia todavía no tiene documentos a la vista.');
     }
     // primero el lugar, luego el documento: abrir un documento no debe
     // retirar el filtro de lugar (ni de la URL ni del estado)
@@ -1224,6 +1237,16 @@
     applyFilterChange({ chip: true });
   }
 
+  function clearTypeFilter() {
+    state.sel.type = null;
+    applyFilterChange();
+  }
+
+  function clearStoryFilter() {
+    state.sel.story = null;
+    applyFilterChange();
+  }
+
   // -- filtros del panel de documentos ------------------------------------------------------
 
   function buildPlaceOptions() {
@@ -1270,6 +1293,30 @@
     applyFilterChange({ scroll: true });
   }
 
+  function setTypeFilter(v) {
+    state.sel.type = v || null;
+    applyFilterChange({ scroll: true });
+  }
+
+  function setStoryFilter(id) {
+    state.sel.story = id || null;
+    applyFilterChange({ scroll: true });
+  }
+
+  // opciones de historia: solo las que ya tienen documentos a la vista
+  // (el desplegable se rellena al reconstruir el estado, como el de lugar)
+  function buildStoryOptions() {
+    if (!dom.storySelect) return;
+    var seen = {}, html = '<option value="">Todas las historias</option>';
+    state.docs.forEach(function (d) {
+      if (seen[d.story]) return;
+      seen[d.story] = 1;
+      html += '<option value="' + S.esc(d.story) + '">' + S.esc(d.storyTitle) + '</option>';
+    });
+    dom.storySelect.innerHTML = html;
+    syncFilterControls();
+  }
+
   function applyYearInputs() {
     var rawFrom = dom.yearFrom.value.trim();
     var rawTo = dom.yearTo.value.trim();
@@ -1292,6 +1339,8 @@
   function syncFilterControls() {
     if (!dom.placeSelect) return;
     dom.placeSelect.value = state.sel.place || '';
+    if (dom.typeSelect) dom.typeSelect.value = state.sel.type || '';
+    if (dom.storySelect) dom.storySelect.value = state.sel.story || '';
     var f = state.range ? String(Math.round(state.range.from)) : '';
     var t = state.range ? String(Math.round(state.range.to)) : '';
     if (document.activeElement !== dom.yearFrom) dom.yearFrom.value = f;
@@ -1304,6 +1353,12 @@
     });
     dom.yearFrom.addEventListener('change', applyYearInputs);
     dom.yearTo.addEventListener('change', applyYearInputs);
+    if (dom.typeSelect) dom.typeSelect.addEventListener('change', function () {
+      setTypeFilter(dom.typeSelect.value || null);
+    });
+    if (dom.storySelect) dom.storySelect.addEventListener('change', function () {
+      setStoryFilter(dom.storySelect.value || null);
+    });
   }
 
   function updateFilterChips() {
@@ -1315,6 +1370,20 @@
       var p = state.places.get(state.sel.place);
       var pname = p ? p.name : state.sel.place;
       bar.appendChild(makeFilterChip(pname, 'Lugar seleccionado', clearPlaceFilter));
+    }
+    if (state.sel.type) {
+      bar.appendChild(makeFilterChip(
+        state.sel.type === 'image' ? 'Imagen' : 'Texto',
+        'Tipo de documento',
+        clearTypeFilter
+      ));
+    }
+    if (state.sel.story) {
+      var sd = null;
+      for (var i = 0; i < state.docs.length; i++) {
+        if (state.docs[i].story === state.sel.story) { sd = state.docs[i]; break; }
+      }
+      bar.appendChild(makeFilterChip(sd ? sd.storyTitle : state.sel.story, 'Historia', clearStoryFilter));
     }
     if (state.range) {
       bar.appendChild(makeFilterChip(
@@ -1520,6 +1589,7 @@
     state.eras = [];
     prepareData(state.files);
     buildPlaceOptions();
+    buildStoryOptions();
   }
 
   function addRecordToState(rec) {
@@ -1588,6 +1658,8 @@
     dom.placeSelect = document.querySelector('[data-place-select]');
     dom.yearFrom = document.querySelector('[data-year-from]');
     dom.yearTo = document.querySelector('[data-year-to]');
+    dom.typeSelect = document.querySelector('[data-type-select]');
+    dom.storySelect = document.querySelector('[data-story-select]');
   }
 
   document.addEventListener('DOMContentLoaded', function () {
