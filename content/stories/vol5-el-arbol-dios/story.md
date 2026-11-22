@@ -79,7 +79,6 @@ images:
     caption: Reconstrucción de un carro de Aman, usado por el ejército de Taaku.
     width: 70
     places:
-      - taaku
       - lande-16
     year: 62
   - file: imgs/arbolDios/aman/aman3.webp
