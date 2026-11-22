@@ -997,12 +997,11 @@
     var revealed = !!findDoc(docId);
     state.readerDoc = docId;
     if (revealed) {
-      var hadPlace = state.sel.place;
+      // el filtro de lugar sigue activo al abrir un documento: solo lo
+      // quita el usuario (chip ×, Esc, elegir otro lugar)
       state.sel.doc = docId;
-      state.sel.place = null;
       syncUrl();
       updateHighlights(true);
-      if (hadPlace) { renderTimeline(); renderDocsPanel(); }
     }
     if (!dom.reader) buildReader();
     updateReader();
@@ -1092,13 +1091,15 @@
     if (Number.isFinite(from) && Number.isFinite(to)) {
       state.range = { from: Math.min(from, to), to: Math.max(from, to) };
     }
-    if (docId != null) {
-      if (docMeta(docId)) openReader(docId);
-      else S.toast('Ese documento no existe o ya no está publicado.');
-    }
+    // primero el lugar, luego el documento: abrir un documento no debe
+    // retirar el filtro de lugar (ni de la URL ni del estado)
     if (placeId != null) {
       if (state.places.has(placeId)) state.sel.place = placeId;
       else S.toast('Esto pertenece a una historia que aún no has leído.');
+    }
+    if (docId != null) {
+      if (docMeta(docId)) openReader(docId);
+      else S.toast('Ese documento no existe o ya no está publicado.');
     }
     updateRangeChip();
   }
