@@ -16,7 +16,7 @@ const TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.pdf': 'application/pdf',
-  '.xml': 'application/rss+xml; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.webp': 'image/webp'

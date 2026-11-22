@@ -32,7 +32,7 @@ de las historias ya leídas: crece a medida que se lee. Al pasar el cursor por
 un lugar del mapa o un punto de la línea de tiempo, las entradas
 correspondientes se resaltan y se centran en el panel.
 
-Las páginas de historia son HTML estático puro (indexables, RSS, sin scripts).
+Las páginas de historia son HTML estático puro (indexables, sin scripts).
 Solo el progreso y `/explorar` necesitan JavaScript.
 
 ### Reglas de desbloqueo (resumen)

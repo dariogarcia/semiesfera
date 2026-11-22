@@ -426,7 +426,7 @@ Referencia completa de campos:
 | ------------ | ----------- | -------------------------------------------------------------- |
 | `title`      | sí          |                                                                |
 | `volume`     | sí          | Ej. «Volumen VI» o «Historias con historia — Volumen 11»       |
-| `summary`    | sí          | Una o dos frases; va al panel de historias y al RSS            |
+| `summary`    | sí          | Una o dos frases; va al panel de historias                     |
 | `hook`       | sí          | Gancho de una línea, sin spoilers; tarjeta de la portada       |
 | `place`      | sí          | Id de `places.json`: lugar donde sucede la historia (tarjeta)  |
 | `publish`    | sí          | `YYYY-MM-DD`. La historia no aparece hasta ese día             |

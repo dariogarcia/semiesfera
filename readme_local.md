@@ -29,7 +29,6 @@ Abre <http://localhost:8178> en el navegador.
 | `http://localhost:8178/` | Portada |
 | `http://localhost:8178/explorar/` | Mapa, línea de tiempo y paneles |
 | `http://localhost:8178/historias/<id>/` | Página propia de cada historia |
-| `http://localhost:8178/rss.xml` | Feed RSS |
 | `http://localhost:8178/404.html` | Página de error |
 
 Para simular un lector nuevo (sin progreso): en las herramientas de

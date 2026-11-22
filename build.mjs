@@ -1,6 +1,6 @@
 // Generador del sitio Semiesfera.
 // Node >= 18, sin dependencias. Uso: node build.mjs
-// Variables: SEMIESFERA_TODAY (fecha simulada YYYY-MM-DD), SEMIESFERA_URL (URL pública para RSS).
+// Variables: SEMIESFERA_TODAY (fecha simulada YYYY-MM-DD), SEMIESFERA_URL (URL pública del sitio).
 // SEMIESFERA_GOATCOUNTER (código de GoatCounter para analítica; vacío = sin analítica).
 
 import fs from 'node:fs';
@@ -353,7 +353,6 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true, 
 <meta name="description" content="${escapeHtml(desc)}">
 <link rel="canonical" href="${SITE_URL}${url}">
 <link rel="stylesheet" href="${p}assets/site.css?v=${ASSET_V}">
-<link rel="alternate" type="application/rss+xml" title="Semiesfera" href="${p}rss.xml">
 <link rel="icon" href="${p}icon.svg" type="image/svg+xml">
 <link rel="icon" href="${p}icon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="${p}apple-touch-icon.png">
@@ -372,7 +371,7 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true, 
 ${GOATCOUNTER ? `<script data-goatcounter="https://${GOATCOUNTER}/count" async src="https://gc.zgo.at/count.js"></script>` : ''}
 </head>
 <body>
-<noscript><div class="noscript">Este sitio necesita JavaScript para el mapa, la línea de tiempo y para recordar tu progreso. Las historias nuevas se anuncian en el <a href="${p}rss.xml">feed RSS</a>.</div></noscript>
+<noscript><div class="noscript">Este sitio necesita JavaScript para el mapa, la línea de tiempo y para recordar tu progreso.</div></noscript>
 ${main}
 ${foot ? `<footer class="site-foot">© ${TODAY.slice(0, 4)} Darío García · texto e imágenes: todos los derechos reservados · código: MIT</footer>` : ''}
 <script src="${p}assets/core.js?v=${ASSET_V}"></script>
@@ -665,8 +664,6 @@ if (allPublished && fs.existsSync(authoredComplete)) {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${mapData.size.width}" height="${mapData.size.height}" viewBox="0 0 ${mapData.size.width} ${mapData.size.height}">\n${inner}\n</svg>\n`);
 }
 
-// RSS
-const rfc822 = (dateStr) => new Date(`${dateStr}T12:00:00Z`).toUTCString();
 // 404: se sirve en cualquier ruta no existente, así que todo va con URL
 // absoluta (los prefijos relativos no sirven aquí)
 writeOut('404.html', layout({
@@ -703,25 +700,6 @@ User-agent: *
 Allow: /
 
 Sitemap: ${SITE_URL}sitemap.xml
-`);
-
-writeOut('rss.xml', `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-<title>Semiesfera</title>
-<link>${SITE_URL}</link>
-<description>Un mundo que empieza sin mapa y se dibuja al leer.</description>
-<language>es</language>
-<copyright>© ${TODAY.slice(0, 4)} Darío García. Texto e imágenes: todos los derechos reservados.</copyright>
-${published.map((s) => `  <item>
-    <title>${escapeHtml(s.title)}</title>
-    <link>${SITE_URL}historias/${s.id}/</link>
-    <guid>${SITE_URL}historias/${s.id}/</guid>
-    <pubDate>${rfc822(s.publish)}</pubDate>
-    <description>${escapeHtml(s.summary)}</description>
-  </item>`).join('\n')}
-</channel>
-</rss>
 `);
 
 console.log(`Build correcto (${TODAY}):`);

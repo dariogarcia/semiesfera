@@ -23,14 +23,11 @@ console.log('Smoke test de public/\n');
 // portada, explorar y páginas
 ok(exists('index.html'), 'existe index.html (portada)');
 ok(exists('explorar/index.html'), 'existe explorar/index.html');
-ok(exists('rss.xml'), 'existe rss.xml');
 const indexHtml = read('index.html');
 ok(indexHtml.includes('explorar/'), 'la portada enlaza a explorar/');
 ok(indexHtml.includes('entra en la semiesfera'), 'la portada tiene el botón de entrada');
 ok(indexHtml.includes('historias con historias'), 'la portada tiene el título "historias con historias"');
-// sin contar el feed RSS del <noscript>: con JS activo no existe en el DOM
-const linksHtml = indexHtml.replace(/<noscript>[\s\S]*?<\/noscript>/g, '');
-ok((linksHtml.match(/<a\s/g) || []).length === 1, 'el botón central es el único enlace de la portada');
+ok((indexHtml.match(/<a\s/g) || []).length === 1, 'el botón central es el único enlace de la portada');
 ok(!indexHtml.includes('<a class="story-card"'), 'las tarjetas son informativas, sin enlace');
 ok(indexHtml.includes('<details class="landing-legal"><summary>acerca de</summary>'), 'la portada esconde los créditos tras «acerca de»');
 ok(!indexHtml.includes('site-header'), 'la portada no tiene barra superior');

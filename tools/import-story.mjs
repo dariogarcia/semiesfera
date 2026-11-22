@@ -320,7 +320,7 @@ function main() {
   const existing = fs.readdirSync(path.join(CONTENT, 'stories')).filter((d) => fs.statSync(path.join(path.join(CONTENT, 'stories'), d)).isDirectory());
   const sequence = args.sequence ? parseInt(args.sequence, 10) : existing.filter((d) => d !== id).length + 1;
   const publish = args.publish || new Date().toISOString().slice(0, 10);
-  if (!args.summary) throw new Error('Falta --summary (se usa en la portada y el RSS)');
+  if (!args.summary) throw new Error('Falta --summary (se usa en la portada y el panel de historias)');
   const summary = args.summary;
   if (!args.hook) throw new Error('Falta --hook (gancho de una línea para la tarjeta de la portada)');
   const hook = args.hook;
