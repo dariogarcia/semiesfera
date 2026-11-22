@@ -19,7 +19,8 @@ documents:
   - image: docs/d2.png
     alt: "\"Costumbres y ritos de los Landes, Volumen 1\", Yan Xoots. Libro."
     label: Libro
-    places: []
+    places:
+      - lande-16
     year: 78
   - image: docs/d3.png
     alt: Hospital de campaña de Tadel, Amanar. Correspondencia oficial.
@@ -60,7 +61,8 @@ documents:
   - image: docs/d9.png
     alt: Casa de la Verdad Botánica. Informe científico.
     label: Informe
-    places: []
+    places:
+      - lande-16
     year: 361
   - image: docs/d10.png
     alt: Casa de la Verdad Médica. Registro de solicitudes.
@@ -70,7 +72,8 @@ documents:
   - image: docs/d11.png
     alt: Estudios hospitalarios, volumen 2. Estudio epidemiológico retrospectivo.
     label: Estudio
-    places: []
+    places:
+      - tadel
     year: 905
 images:
   - file: imgs/arbolDios/cart/cart2.webp
