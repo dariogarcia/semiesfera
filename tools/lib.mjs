@@ -3,6 +3,11 @@
 
 import fs from 'node:fs';
 
+// Paleta cíclica por número de volumen: portadas y tarjetas og comparten
+// el color de cada historia.
+export const PALETTE = ['#e2946b', '#79b6a9', '#dfc17e', '#a48ec9', '#7fa6c9', '#c9836f', '#93c47d', '#c9c19a'];
+export const paletteColor = (sequence) => PALETTE[(sequence - 1) % PALETTE.length];
+
 export function escapeHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')

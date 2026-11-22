@@ -31,7 +31,8 @@ historia.md (Pandoc/LaTeX)
 
 El importer automatiza todo el proceso manual de las secciones siguientes:
 parsea tu Markdown de Pandoc, compila cada doc-box con tu propio preámbulo y
-escribe `story.md`, `story.pdf`, `cover.svg` y los `docs/dN.png`.
+escribe `story.md`, `story.pdf`, `cover.svg`, `og.png` (tarjeta 1200×630
+para los enlaces compartidos) y los `docs/dN.png`.
 
 ```sh
 # 1. Copia tu original (verbatim) a content/sources/

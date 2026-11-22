@@ -342,7 +342,7 @@ const indexData = {
 // Plantillas
 // ---------------------------------------------------------------------------
 
-function layout({ prefix, title, desc, main, script = null, inlineIndex = true, foot = true, url = '' }) {
+function layout({ prefix, title, desc, main, script = null, inlineIndex = true, foot = true, url = '', image = 'og-image.png' }) {
   const p = prefix;
   return `<!doctype html>
 <html lang="es">
@@ -361,12 +361,14 @@ function layout({ prefix, title, desc, main, script = null, inlineIndex = true, 
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(desc)}">
 <meta property="og:url" content="${SITE_URL}${url}">
-<meta property="og:image" content="${SITE_URL}og-image.png">
+<meta property="og:image" content="${SITE_URL}${image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:locale" content="es">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(desc)}">
-<meta name="twitter:image" content="${SITE_URL}og-image.png">
+<meta name="twitter:image" content="${SITE_URL}${image}">
 <script>window.SEMI_BASE=${jsonInline(p)};window.SEMI_V=${jsonInline(DATA_V)};${inlineIndex ? `window.SEMI_INDEX=${jsonInline(indexData)};` : ''}</script>
 ${GOATCOUNTER ? `<script data-goatcounter="https://${GOATCOUNTER}/count" async src="https://gc.zgo.at/count.js"></script>` : ''}
 </head>
@@ -614,13 +616,17 @@ writeOut('explorar/index.html', layout({
 
 for (const s of published) {
   const rec = records.get(s.id);
+  // tarjeta og propia si existe (la genera el importer); si no, la del sitio
+  const ogImage = fs.existsSync(path.join(CONTENT, 'stories', s.id, 'og.png'))
+    ? `stories/${s.id}/og.png` : undefined;
   writeOut(`historias/${s.id}/index.html`, layout({
     prefix: '../../',
     url: `historias/${s.id}/`,
     title: `${s.title} — Semiesfera`,
     desc: s.summary,
     main: storyMain(s, rec),
-    script: 'story'
+    script: 'story',
+    image: ogImage
   }));
   for (const f of fs.readdirSync(path.join(CONTENT, 'stories', s.id))) {
     if (f === 'story.md') continue;

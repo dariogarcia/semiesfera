@@ -60,6 +60,11 @@ for (const s of index.stories) {
   ok(storyHtml.includes(s.title), `la página de ${s.id} tiene el título`);
   ok(!TOKEN_RESIDUAL.test(storyHtml), `${s.id}: sin tokens LaTeX residuales en el cuerpo`);
   ok(storyHtml.includes('class="story-fin"'), `${s.id}: cierre tipográfico del FIN`);
+  // tarjeta og propia: og:image y twitter:image apuntan a stories/<id>/og.png
+  const og = storyHtml.match(/property="og:image" content="([^"]+)"/);
+  ok(og && og[1].endsWith(`/stories/${s.id}/og.png`), `${s.id}: og:image es su propia tarjeta`);
+  ok(storyHtml.includes(`name="twitter:image" content="${og ? og[1] : ''}"`), `${s.id}: twitter:image usa la misma tarjeta`);
+  ok(exists(`stories/${s.id}/og.png`), `${s.id}: existe stories/${s.id}/og.png`);
 }
 
 // secuencia única y consecutiva

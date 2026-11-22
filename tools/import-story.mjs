@@ -1,7 +1,8 @@
 // Importa una historia escrita como fuente Pandoc/LaTeX (fenced divs
 // {.doc-box} con tcolorbox + \docmeta) y genera su carpeta en
-// content/stories/<id>/: story.md, docs/dN.png, cover.svg y story.pdf.
-// Requiere xelatex + pdftoppm (render de documentos) y python3 con PIL
+// content/stories/<id>/: story.md, docs/dN.png, cover.svg, og.png y story.pdf.
+// Requiere xelatex + pdftoppm (render de documentos), inkscape (tarjeta og)
+// y python3 con PIL
 // (recorte). Sin ellos, cae en marcadores de posición.
 //
 // Uso:
@@ -14,7 +15,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { makePdf } from './lib.mjs';
+import { makePdf, paletteColor } from './lib.mjs';
+import { writeOgPng } from './og-card.mjs';
 import {
   splitSource, extractBlockScalar, extractScalar, extractHeaderIncludes,
   braceContent, replaceMacro, removeMacro, extractFirstMacro,
@@ -25,7 +27,6 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT = path.join(ROOT, 'content');
 const RENDERS = path.join(ROOT, 'renders');
-const PALETTE = ['#e2946b', '#79b6a9', '#dfc17e', '#a48ec9', '#7fa6c9', '#c9836f', '#93c47d', '#c9c19a'];
 
 // ---------------------------------------------------------------------------
 // Argumentos
@@ -181,7 +182,7 @@ ${svgTextLines(fuenteLines, 26, 140, `font-family="Georgia, serif" font-size="13
 }
 
 function coverSvg(title, volume, sequence) {
-  const color = PALETTE[(sequence - 1) % PALETTE.length];
+  const color = paletteColor(sequence);
   const titleLines = wrapText(title.toUpperCase(), 18);
   const volLines = wrapText(volume.toUpperCase(), 26);
   const titleStart = 300 - ((titleLines.length - 1) * 24) / 2;
@@ -328,7 +329,7 @@ function main() {
     if (!args.force) throw new Error(`Ya existe content/stories/${id} (usa --force para regenerar)`);
     // story.pdf no se borra: puede ser una versión afinada a mano y el import
     // la conserva salvo que se pase --pdf explícito
-    for (const f of ['story.md', 'cover.svg']) {
+    for (const f of ['story.md', 'cover.svg', 'og.png']) {
       const p = path.join(storyDir, f);
       if (fs.existsSync(p)) fs.rmSync(p);
     }
@@ -372,8 +373,9 @@ function main() {
     }
   }
 
-  // portada
+  // portada + tarjeta og (para los enlaces compartidos de la historia)
   fs.writeFileSync(path.join(storyDir, 'cover.svg'), coverSvg(title, volume, sequence));
+  const ogOk = writeOgPng(storyDir, { title, volume, sequence });
 
   // pdf
   let pdfStatus = 'generado';
@@ -441,6 +443,7 @@ function main() {
 
   console.log(`Importada ${id} (${docs.length} documentos, ${images.length} imágenes, sequence ${sequence}, publish ${publish})`);
   console.log(`  pdf: ${pdfStatus}`);
+  console.log(`  og: ${ogOk ? 'og.png generada (tarjeta para enlaces compartidos)' : 'og.png NO generada (falta inkscape; el sitio usará su tarjeta genérica)'}`);
   for (const r of results) console.log(`  d${r.n}: ${r.status.padEnd(10)} ${r.out}  [${r.label}, ${r.year}]`);
   for (const im of images) console.log(`  ${im.file}  [${im.width ? im.width + '%' : 'ancho natural'}]`);
   console.log('\nSiguientes pasos:');
