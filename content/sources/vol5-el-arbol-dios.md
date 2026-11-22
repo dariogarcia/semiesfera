@@ -364,9 +364,9 @@ Esa es mi abuela. Y esta es la historia de la historia del Aman. Árbol sagrado,
 \end{figure}
 
 {\centering \textbf{FIN}}
-\vspace{3em}
-\begin{center} 
-\rule{0.3\linewidth}{0.4pt}\\[8pt]  
-     {\small\itshape\color{gray!45!black}%  
-© 2026 Dario Garcia. Todos los derechos reservados.}                                                                                                                                
-     \end{center}
+\vfill
+\begin{center}
+\footnotesize\itshape\color{gray!60!black}%
+© 2026 Dario Garcia. Todos los derechos reservados.
+\end{center}
+\vspace{2em}
