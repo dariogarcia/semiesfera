@@ -12,74 +12,74 @@ reveals:
   - p-lande-14
 documents:
   - image: docs/d1.png
-    alt: Museo Xunei Thun de Arte, Taaku. Audioguía del Museo Xunei Thun para visitantes.
+    alt: Audioguía para visitantes del Museo Xunei Thun de Arte, Taaku.
     label: Audioguía del Museo Xunei Thun
     places:
       - deishe
     year: 480
   - image: docs/d2.png
-    alt: Cuerpo de Ciudadania, Gobierno de Taaku. Examen de ciudadanía de Taaku de Ciudadanía - Rúbrica de evaluación.
+    alt: "Examen de ciudadanía de Taaku: rúbrica de evaluación del Cuerpo de Ciudadanía."
     label: Examen de ciudadanía de Taaku
     places:
       - taaku
     year: 460
   - image: docs/d3.png
-    alt: Panfleto de distribución pública. Manifiesto Noviembre Rosa Noviembre Rosa.
+    alt: Manifiesto del Noviembre Rosa en panfleto de distribución pública.
     label: Manifiesto Noviembre Rosa
     places:
       - etaan
     year: 390
   - image: docs/d4.png
-    alt: Museo Histórico de Deishe, Taaku. Bando del Administrador Real (Deishe) del Administrador Real.
+    alt: Bando del Administrador Real de Deishe, del Museo Histórico de Deishe.
     label: Bando del Administrador Real (Deishe)
     places:
       - deishe
     year: -11
   - image: docs/d5.png
-    alt: Enciclopedia de Rocas y Minerales - 4a Edición revisada. Enciclopedia de rocas y minerales enciclopédica.
+    alt: Entrada enciclopédica de la Enciclopedia de Rocas y Minerales, 4.ª edición revisada.
     label: Enciclopedia de rocas y minerales
     places:
       - kalts-een
     year: 878
   - image: docs/d6.png
-    alt: Corte del Rey, Taaku. Edicto Real de la Corte del Rey Real.
+    alt: Edicto Real de la Corte del Rey, Taaku.
     label: Edicto Real de la Corte del Rey
     places:
       - etaan
     year: -8
   - image: docs/d7.png
-    alt: Celda-mina de Kalts'een, Taaku. Manual de gestión de la celda-mina Kalts'een de gestión.
+    alt: Manual de gestión de la celda-mina de Kalts'een, Taaku.
     label: Manual de gestión de la celda-mina Kalts'een
     places:
       - kalts-een
     year: -37
   - image: docs/d8.png
-    alt: Correspondencia personal de la familia Lihashi. Cartas de la familia Lihashi manuscritas.
+    alt: Cartas manuscritas de la familia Lihashi.
     label: Cartas de la familia Lihashi
     places:
       - kalts-een
     year: -7
     yearEnd: -1
   - image: docs/d9.png
-    alt: Registro de actas y eventos mineros, volumen AAA372. Acta del consejo minero de Kalts'een de reunión.
+    alt: Acta de la reunión del consejo minero de Kalts'een, registro AAA372.
     label: Acta del consejo minero de Kalts'een
     places:
       - kalts-een
     year: 0
   - image: docs/d10.png
-    alt: Correspondencia de la Corte del Rey, Etaan. Carta de la Corte del Rey de Etaan Manuscrita.
+    alt: Carta manuscrita de la Corte del Rey, Etaan.
     label: Carta de la Corte del Rey de Etaan
     places:
       - kalts-een
     year: 0
   - image: docs/d11.png
-    alt: Fortaleza de Kalts'een, Taaku. Diario de Shteek personal.
+    alt: Diario personal de Shteek, de la fortaleza de Kalts'een, Taaku.
     label: Diario de Shteek
     places:
       - kalts-een
     year: 0
   - image: docs/d12.png
-    alt: Museo Xunei Thun de Arte, Deishe (Taaku). Audioguía del Museo Xunei Thun (II) para visitantes.
+    alt: Audioguía para visitantes del Museo Xunei Thun de Arte, Deishe.
     label: Audioguía del Museo Xunei Thun (II)
     places:
       - deishe
