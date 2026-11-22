@@ -321,6 +321,12 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; line-height: 1.25
 .story-head-info .summary { font-size: 17px; color: var(--text-dim); }
 .story-body { margin-top: 28px; max-width: 640px; }
 .story-body h2, .story-body h3 { margin-top: 1.6em; }
+/* diálogo (viene de \dline en la fuente): réplicas juntas, tono tenue */
+.story-body blockquote { margin: 26px 0; padding: 2px 4px 2px 16px; border-left: 2px solid var(--line); }
+.story-body blockquote p { margin: 0 0 8px; color: var(--text-dim); }
+.story-body blockquote p:last-child { margin-bottom: 0; }
+/* cierre canónico de la historia (FIN en la fuente) */
+.story-fin { margin: 2.6em 0 0; text-align: center; font-family: var(--font-serif); font-size: 15px; letter-spacing: 0.45em; text-indent: 0.45em; color: var(--text-dim); }
 
 .story-docs { margin-top: 40px; }
 /* documentos dentro del texto (lectores de historia y hoja del explorador) */

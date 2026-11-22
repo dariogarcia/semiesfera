@@ -143,8 +143,25 @@ export function renderMarkdown(md) {
       out.push(`<ul>${items.join('')}</ul>`);
       continue;
     }
+    if (/^\s*>\s?/.test(line)) {
+      // cita de diálogo (viene de \dline en la fuente): cada línea > es
+      // una réplica, todas juntas en un solo blockquote
+      const quotes = [];
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+        quotes.push(`<p>${inline(lines[i].replace(/^\s*>\s?/, ''))}</p>`);
+        i++;
+      }
+      out.push(`<blockquote>${quotes.join('')}</blockquote>`);
+      continue;
+    }
     const para = [];
     while (i < lines.length && lines[i].trim()) { para.push(lines[i]); i++; }
+    // cierre canónico de las historias (lo emite el importer desde el
+    // bloque FIN de la fuente): **FIN** a solas lleva clase propia
+    if (para.length === 1 && para[0].trim() === '**FIN**') {
+      out.push('<p class="story-fin"><strong>FIN</strong></p>');
+      continue;
+    }
     out.push(`<p>${para.map(inline).join(' ')}</p>`);
   }
   return out.join('\n');

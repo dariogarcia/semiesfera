@@ -82,6 +82,9 @@ for (const m of markers) {
   const exists = m[0] === 'd' ? n <= documents.length : n <= images.length;
   if (!exists) fail(`el cuerpo usa {{${m}}} pero no existe esa entrada (hay ${documents.length} documentos y ${images.length} imágenes)`);
 }
+// tokens LaTeX residuales: el conversor del importer no dejó nada atrás
+const RESIDUAL = /\{\d+(?:[.,]\d+)?(?:em|pt)\}|\{center\}|\{>\}|\{gray!|\[\d+pt\]|Todos los derechos reservados/;
+if (RESIDUAL.test(body)) fail('el cuerpo tiene tokens LaTeX residuales (¿re-importar con el importer actualizado?)');
 const used = new Set(markers);
 documents.forEach((_, i) => { if (!used.has(`d${i + 1}`)) warn(`documento ${i + 1} no tiene marcador {{d${i + 1}}}: aparecerá en la lista final "Documentos"`); });
 

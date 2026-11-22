@@ -186,9 +186,3 @@ Esta sería, así rápido y por encima, la historia de la historia de Xunei Thun
 {{i6}}
 
 **FIN**
-{3em}
-{center}
-{0.3}{0.4pt} [8pt]
-     {{gray!45!black}%
-© 2026 Dario Garcia. Todos los derechos reservados.}
-     {center}

@@ -57,6 +57,11 @@ Qué hace solo:
 
 - Extrae frontmatter (título, volumen, `header-includes`), doc-boxes y
   `\docmeta` de cada uno (Tipo → `label`, Año → `year`/`yearEnd`, Fuente → `alt`).
+- Convierte la narrativa a Markdown reducido: `\dline{>}{…}` (y
+  `\dline{Nombre}{…}`) → cita de diálogo (`> …`, una línea por réplica);
+  el bloque final `{\centering \textbf{FIN}}` y su pie de copyright →
+  `**FIN**` (la web pinta el © en su propio pie de página, así que el
+  bloque de cierre de la fuente nunca llega al cuerpo).
 - Renderiza cada doc-box en una página larga (21×100 cm) con xelatex,
   la recorta y apila en `docs/dN.png` (los `.tex`/`.log` quedan en
   `renders/`, que está en `.gitignore`).

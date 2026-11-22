@@ -42,6 +42,7 @@ ok(exploreHtml.includes('data-dp-list'), 'explorar tiene el panel de documentos'
 ok(exploreHtml.includes('data-tl-svg'), 'explorar tiene la línea de tiempo');
 
 // historias publicadas: página, datos, recursos
+const TOKEN_RESIDUAL = /\{\d+(?:[.,]\d+)?(?:em|pt)\}|\{center\}|\{>\}|\{gray!|\[\d+pt\]/;
 for (const s of index.stories) {
   ok(exists(`historias/${s.id}/index.html`), `página de ${s.id}`);
   ok(exists(`data/${s.id}.json`), `datos de ${s.id}`);
@@ -57,6 +58,8 @@ for (const s of index.stories) {
   }
   const storyHtml = read(`historias/${s.id}/index.html`);
   ok(storyHtml.includes(s.title), `la página de ${s.id} tiene el título`);
+  ok(!TOKEN_RESIDUAL.test(storyHtml), `${s.id}: sin tokens LaTeX residuales en el cuerpo`);
+  ok(storyHtml.includes('class="story-fin"'), `${s.id}: cierre tipográfico del FIN`);
 }
 
 // secuencia única y consecutiva

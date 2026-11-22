@@ -67,7 +67,7 @@ function parsePairs(map, splitter) {
 
 // extrae \begin{figure}/wrapfigure y \includegraphics sueltos del texto,
 // dejando un marcador {{iN}} en su sitio. Devuelve { text, images }.
-function extractNarrativeImages(text, startAt) {
+export function extractNarrativeImages(text, startAt) {
   const images = [];
   let n = startAt;
   const take = (chunk) => {
@@ -105,13 +105,33 @@ function stripCentering(text) {
   return out;
 }
 
-function cleanNarrative(text) {
+export function cleanNarrative(text) {
   let t = text;
+  // Cierre canónico de las fuentes: bloque {\centering \textbf{FIN}}
+  // seguido del pie de copyright. La web pinta el © en el pie de todas
+  // las páginas, así que todo lo que sigue al bloque FIN se descarta.
+  const fin = /\{\\centering\s*\\textbf\{FIN\}\}/.exec(t) || /\\textbf\{FIN\}/.exec(t);
+  if (fin) t = `${t.slice(0, fin.index)}**FIN**`;
   t = t.replace(/<!--[\s\S]*?-->/g, '');
   t = t.replace(/\\begin\{figure\}[\s\S]*?\\end\{figure\}/g, '');
   t = t.replace(/\\begin\{wrapfigure\}[\s\S]*?\\end\{wrapfigure\}/g, '');
   t = removeMacro(t, 'timelinefooter');
-  t = t.replace(/\\(?:clearpage|newpage|dline|par|noindent)\b/g, '');
+  // \dline{hablante}{réplica} → cita de diálogo (>). El hablante ">" es la
+  // réplica anónima; cualquier otro texto es el nombre de quien habla.
+  for (let guard = 0; guard < 400; guard++) {
+    const m = /\\dline\s*\{/.exec(t);
+    if (!m) break;
+    const speaker = braceContent(t, m.index + m[0].length - 1);
+    if (!speaker) break;
+    const reply = braceContent(t, speaker.end + 1);
+    if (!reply) break;
+    const who = plainText(speaker.content).trim();
+    const tag = who === '>' ? '' : `**${who}:** `;
+    t = t.slice(0, m.index) + `> ${tag}${reply.content.trim()}` + t.slice(reply.end + 1);
+  }
+  t = t.replace(/\\(?:clearpage|newpage|par|noindent)\b/g, '');
+  t = t.replace(/^[ \t]+(?=> )/gm, '');
+  t = t.replace(/\\[vh]space\s*\{[^}]*\}/g, '');
   t = stripCentering(t);
   t = replaceMacro(t, 'footnote', (c) => ` (${plainText(c)})`);
   t = replaceMacro(t, 'textbf', (c) => `**${plainText(c)}**`);
